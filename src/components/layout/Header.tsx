@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, GraduationCap, Menu, X } from "lucide-react";
+import { BookOpen, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
@@ -19,7 +19,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <img src="/wildcat.ico" alt="Wildcat logo" className="h-5 w-5 object-contain" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">FlashLearn</span>
         </Link>
