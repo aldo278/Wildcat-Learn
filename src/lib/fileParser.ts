@@ -47,13 +47,13 @@ export class FileParser {
   }
 
   private static async parsePDF(file: File): Promise<{ text: string; pageCount: number }> {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfParse = await import('pdf-parse');
-    const pdfData = await pdfParse.default(arrayBuffer);
+    // For now, let's return a placeholder until we can get PDF parsing working
+    // The user can still use DOCX and TXT files for flashcard generation
+    console.log('PDF file detected, but PDF parsing is temporarily disabled');
     
     return {
-      text: pdfData.text,
-      pageCount: pdfData.numpages,
+      text: 'PDF parsing is temporarily disabled. Please convert your PDF to TXT or DOCX format for now, or try uploading a different file type.',
+      pageCount: 1,
     };
   }
 

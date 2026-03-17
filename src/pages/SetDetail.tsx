@@ -4,6 +4,7 @@ import { FlashcardDisplay } from "@/components/flashcard/FlashcardDisplay";
 import { AITestGenerator } from "@/components/test/AITestGenerator";
 import { Button } from "@/components/ui/button";
 import { getSetById } from "@/data/mockData";
+import { FlashcardSet } from "@/types/flashcard";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -25,7 +26,25 @@ export default function SetDetail() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [aiTestQuestions, setAiTestQuestions] = useState<TestQuestion[]>([]);
   
-  const set = getSetById(id || "");
+  // Check sessionStorage first for AI-generated sets, then fall back to mockData
+  let set: FlashcardSet | null = null;
+  
+  try {
+    const tempAISet = sessionStorage.getItem('tempAISet');
+    if (tempAISet) {
+      const parsedSet = JSON.parse(tempAISet);
+      if (parsedSet.id === id) {
+        set = parsedSet;
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing AI set from sessionStorage:', error);
+  }
+  
+  // If not found in sessionStorage, check mockData
+  if (!set) {
+    set = getSetById(id || "");
+  }
   
   if (!set) {
     return (
