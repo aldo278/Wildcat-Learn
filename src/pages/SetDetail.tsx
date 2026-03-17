@@ -1,6 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { FlashcardDisplay } from "@/components/flashcard/FlashcardDisplay";
+import { AITestGenerator } from "@/components/test/AITestGenerator";
 import { Button } from "@/components/ui/button";
 import { getSetById } from "@/data/mockData";
 import { 
@@ -16,10 +17,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ProgressBar } from "@/components/flashcard/ProgressBar";
+import { TestQuestion } from "@/types/flashcard";
 
 export default function SetDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [aiTestQuestions, setAiTestQuestions] = useState<TestQuestion[]>([]);
   
   const set = getSetById(id || "");
   
@@ -45,6 +49,13 @@ export default function SetDetail() {
   
   const goToNext = () => {
     setCurrentCardIndex((prev) => (prev < set.cards.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleAITestGenerated = (questions: TestQuestion[]) => {
+    setAiTestQuestions(questions);
+    // Store AI questions in session storage for the test mode
+    sessionStorage.setItem('aiTestQuestions', JSON.stringify(questions));
+    navigate(`/set/${set.id}/test`);
   };
 
   return (
@@ -91,7 +102,7 @@ export default function SetDetail() {
         </div>
         
         {/* Study Mode Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             to={`/set/${set.id}/flashcards`}
             className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-card"
@@ -125,11 +136,26 @@ export default function SetDetail() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10 transition-colors group-hover:bg-success/20">
               <CheckSquare className="h-6 w-6 text-success" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-foreground">Test</p>
               <p className="text-sm text-muted-foreground">Quiz yourself</p>
             </div>
           </Link>
+          
+          {/* AI Test Generator */}
+          <div className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-card">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 transition-colors group-hover:from-purple-500/20 group-hover:to-pink-500/20">
+              <Brain className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground">AI Test</p>
+              <p className="text-sm text-muted-foreground">Generate with AI</p>
+            </div>
+            <AITestGenerator 
+              flashcards={set.cards} 
+              onTestGenerated={handleAITestGenerated}
+            />
+          </div>
         </div>
         
         {/* Preview Flashcard */}

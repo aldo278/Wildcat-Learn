@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { SetCard } from "@/components/flashcard/SetCard";
 import { Button } from "@/components/ui/button";
 import { mockFlashcardSets } from "@/data/mockData";
-import { Plus, Search, BookOpen, Brain, FileText } from "lucide-react";
+import { Plus, Search, BookOpen, Brain, FileText, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function Dashboard() {
@@ -38,12 +38,20 @@ export default function Dashboard() {
               Ready to continue learning?
             </p>
           </div>
-          <Link to="/create">
-            <Button size="lg" className="gap-2">
-              <Plus className="h-5 w-5" />
-              Create Set
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <Link to="/ai-generate">
+              <Button variant="outline" size="lg" className="gap-2">
+                <Wand2 className="h-5 w-5" />
+                AI Generate
+              </Button>
+            </Link>
+            <Link to="/create">
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Create Set
+              </Button>
+            </Link>
+          </div>
         </div>
         
         {/* Stats Cards */}

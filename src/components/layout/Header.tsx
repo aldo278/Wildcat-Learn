@@ -11,6 +11,7 @@ export function Header() {
   
   const navLinks = [
     { path: "/dashboard", label: "My Sets" },
+    { path: "/ai-generate", label: "AI Generate" },
     { path: "/explore", label: "Explore" },
   ];
 

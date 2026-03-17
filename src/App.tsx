@@ -12,6 +12,7 @@ import TestMode from "./pages/TestMode";
 import CreateSet from "./pages/CreateSet";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
+import AIGenerate from "./pages/AIGenerate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/create" element={<CreateSet />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/ai-generate" element={<AIGenerate />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
