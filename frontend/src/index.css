@@ -1,0 +1,316 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Flashcard App Design System - Quizlet-inspired modern educational theme */
+
+@layer base {
+  :root {
+    /* Primary - Rich Indigo */
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Warm Coral */
+    --secondary: 16 85% 66%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Background & Surfaces */
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Muted */
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 9% 46%;
+    
+    /* Accent - Light Indigo */
+    --accent: 239 84% 95%;
+    --accent-foreground: 239 84% 47%;
+    
+    /* Success - Correct answers */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Destructive - Incorrect/Errors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* UI Elements */
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 239 84% 67%;
+    
+    --radius: 0.75rem;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(260, 100%, 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(16, 85%, 66%) 0%, hsl(340, 82%, 60%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(160, 84%, 39%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(280, 87%, 63%) 50%, hsl(340, 82%, 63%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(220 20% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.1), 0 2px 4px -2px hsl(220 20% 10% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(220 20% 10% / 0.1), 0 4px 6px -4px hsl(220 20% 10% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(220 20% 10% / 0.1), 0 8px 10px -6px hsl(220 20% 10% / 0.1);
+    --shadow-card: 0 4px 20px -4px hsl(239 84% 67% / 0.15);
+    --shadow-card-hover: 0 8px 30px -4px hsl(239 84% 67% / 0.25);
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 84% 95%;
+    --sidebar-accent-foreground: 239 84% 47%;
+    --sidebar-border: 220 13% 87%;
+    --sidebar-ring: 239 84% 67%;
+  }
+
+  .dark {
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 16 85% 66%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --background: 222 47% 6%;
+    --foreground: 220 20% 95%;
+    
+    --card: 222 47% 9%;
+    --card-foreground: 220 20% 95%;
+    
+    --popover: 222 47% 9%;
+    --popover-foreground: 220 20% 95%;
+    
+    --muted: 222 30% 15%;
+    --muted-foreground: 220 9% 60%;
+    
+    --accent: 239 50% 20%;
+    --accent-foreground: 239 84% 75%;
+    
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 239 84% 67%;
+    
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 50% 20%;
+    --sidebar-accent-foreground: 239 84% 75%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 239 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Card flip animation */
+  .flashcard-container {
+    perspective: 1000px;
+  }
+  
+  .flashcard {
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .flashcard.flipped {
+    transform: rotateY(180deg);
+  }
+  
+  .flashcard-front,
+  .flashcard-back {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .flashcard-back {
+    transform: rotateY(180deg);
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Gradient backgrounds */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-success {
+    background: var(--gradient-success);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  /* Card shadows */
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .card-shadow-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  /* Smooth slide animations */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(239 84% 67% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 10px hsl(239 84% 67% / 0);
+    }
+  }
+  
+  @keyframes progress-fill {
+    from {
+      width: 0;
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+  
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s ease-out;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  
+  .animate-bounce-in {
+    animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s infinite;
+  }
+  
+  .animate-progress-fill {
+    animation: progress-fill 0.5s ease-out;
+  }
+  
+  /* Swipe card animations */
+  @keyframes swipe-right {
+    to {
+      opacity: 0;
+      transform: translateX(100%) rotate(10deg);
+    }
+  }
+  
+  @keyframes swipe-left {
+    to {
+      opacity: 0;
+      transform: translateX(-100%) rotate(-10deg);
+    }
+  }
+  
+  .swipe-right {
+    animation: swipe-right 0.3s ease-out forwards;
+  }
+  
+  .swipe-left {
+    animation: swipe-left 0.3s ease-out forwards;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

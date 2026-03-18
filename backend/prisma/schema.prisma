@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  flashcardSets FlashcardSet[]
+  studyProgress StudyProgress[]
+  testResults   TestResult[]
+  
+  @@map("users")
+}
+
+model FlashcardSet {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  isPublic    Boolean  @default(false)
+  studyCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  cards      Flashcard[]
+  testResults TestResult[]
+  
+  @@map("flashcard_sets")
+}
+
+model Flashcard {
+  id          String   @id @default(cuid())
+  term        String
+  definition  String
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  studyProgress StudyProgress[]
+  
+  @@map("flashcards")
+}
+
+model StudyProgress {
+  id         String   @id @default(cuid())
+  known      Boolean  @default(false)
+  attempts   Int      @default(0)
+  lastStudied DateTime @default(now())
+  
+  // Relations
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId String
+  card   Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, cardId])
+  @@map("study_progress")
+}
+
+model TestResult {
+  id             String   @id @default(cuid())
+  score          Int
+  totalQuestions Int
+  completedAt    DateTime @default(now())
+  
+  // Relations
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setId  String
+  set    FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  
+  questions TestQuestion[]
+  
+  @@map("test_results")
+}
+
+model TestQuestion {
+  id           String   @id @default(cuid())
+  type         String   // 'multiple-choice', 'true-false', 'short-answer'
+  question     String
+  correctAnswer String
+  options      String?  // JSON string for multiple choice
+  userAnswer   String?
+  isCorrect    Boolean?
+  
+  // Relations
+  testResultId String
+  testResult   TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  
+  @@map("test_questions")
+}

@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wildcat-learn-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - JWT_EXPIRES_IN=7d
+      - PORT=3001
+      - NODE_ENV=production
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - backend_data:/app/data
+      - ./backend/dev.db:/app/dev.db:rw
+    networks:
+      - wildcat-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wildcat-learn-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - wildcat-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Database (optional - for future PostgreSQL migration)
+  # Uncomment when ready to migrate from SQLite to PostgreSQL
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: wildcat-learn-db
+  #   environment:
+  #     POSTGRES_DB: wildcat_learn
+  #     POSTGRES_USER: wildcat_user
+  #     POSTGRES_PASSWORD: wildcat_password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - wildcat-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U wildcat_user -d wildcat_learn"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+volumes:
+  backend_data:
+    driver: local
+  # postgres_data:
+  #   driver: local
+
+networks:
+  wildcat-network:
+    driver: bridge
