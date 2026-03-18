@@ -9,10 +9,15 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { useAI } from '@/hooks/useAI';
 import { FileParser, ParsedContent } from '@/lib/fileParser';
 import { Flashcard, FlashcardSet } from '@/types/flashcard';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Upload, 
   Wand2, 
@@ -22,7 +27,10 @@ import {
   ArrowRight, 
   Settings,
   Lightbulb,
-  BookOpen
+  BookOpen,
+  Save,
+  Globe,
+  Lock
 } from 'lucide-react';
 
 export default function AIGenerate() {
@@ -35,12 +43,19 @@ export default function AIGenerate() {
     clearError,
     clearResults,
   } = useAI();
+  const { token } = useAuth();
 
-  const [step, setStep] = useState<'upload' | 'configure' | 'generate' | 'review'>('upload');
+  const [step, setStep] = useState<'upload' | 'configure' | 'generate' | 'review' | 'save'>('upload');
   const [parsedContent, setParsedContent] = useState<ParsedContent | null>(null);
   const [cardCount, setCardCount] = useState([10]);
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
+  
+  // Save form states
+  const [setTitle, setSetTitle] = useState('');
+  const [setDescription, setSetDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     try {
@@ -104,30 +119,93 @@ export default function AIGenerate() {
       return;
     }
 
-    const selectedFlashcards: Flashcard[] = Array.from(selectedCards).map(index => ({
-      id: `ai-${Date.now()}-${index}`,
-      term: generatedFlashcards.flashcards[index].term,
-      definition: generatedFlashcards.flashcards[index].definition,
-      createdAt: new Date(),
-    }));
+    // Pre-fill the form with generated content
+    const defaultTitle = `AI Generated: ${parsedContent?.fileName?.replace(/\.[^/.]+$/, '') || 'Study Set'}`;
+    const defaultDescription = `Generated from ${parsedContent?.fileName || 'uploaded file'} • ${selectedCards.size} cards • ${difficulty} difficulty`;
+    
+    setSetTitle(defaultTitle);
+    setSetDescription(defaultDescription);
+    setStep('save');
+  };
 
-    // Create a temporary set (in real app, this would be saved to backend)
-    const newSet: FlashcardSet = {
-      id: `ai-set-${Date.now()}`,
-      title: `AI Generated: ${parsedContent?.fileName || 'Study Set'}`,
-      description: `Generated from ${parsedContent?.fileName || 'uploaded file'} • ${selectedFlashcards.length} cards`,
-      cards: selectedFlashcards,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      authorId: 'user1',
-      authorName: 'AI Assistant',
-      isPublic: false,
-      studyCount: 0,
-    };
+  const handleSaveSet = async () => {
+    if (!token) {
+      toast.error('You must be logged in to save a set');
+      navigate('/auth');
+      return;
+    }
 
-    // Store in session storage for temporary use
-    sessionStorage.setItem('tempAISet', JSON.stringify(newSet));
-    navigate(`/set/${newSet.id}`);
+    if (!generatedFlashcards || selectedCards.size === 0) {
+      toast.error('Please select at least one flashcard');
+      return;
+    }
+
+    if (!setTitle.trim()) {
+      toast.error('Please enter a title for your set');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Create the flashcard set
+      const setResponse = await fetch('http://localhost:3001/api/sets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: setTitle.trim(),
+          description: setDescription.trim(),
+          isPublic
+        })
+      });
+      
+      if (!setResponse.ok) {
+        const errorData = await setResponse.json();
+        throw new Error(errorData.message || 'Failed to create set');
+      }
+      
+      const setData = await setResponse.json();
+      
+      // Create the flashcards
+      const selectedFlashcards: Flashcard[] = Array.from(selectedCards).map(index => ({
+        id: `ai-${Date.now()}-${index}`,
+        term: generatedFlashcards.flashcards[index].term,
+        definition: generatedFlashcards.flashcards[index].definition,
+        createdAt: new Date(),
+      }));
+
+      const cardsResponse = await fetch('http://localhost:3001/api/cards/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          setId: setData.set.id,
+          cards: selectedFlashcards.map(card => ({
+            term: card.term,
+            definition: card.definition
+          }))
+        })
+      });
+      
+      if (!cardsResponse.ok) {
+        const errorData = await cardsResponse.json();
+        throw new Error(errorData.message || 'Failed to create cards');
+      }
+      
+      toast.success(`Set "${setTitle}" saved successfully!`);
+      navigate(`/set/${setData.set.id}`);
+      
+    } catch (error) {
+      console.error('Error saving set:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save set');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getDifficultyColor = (level: string) => {
@@ -500,6 +578,118 @@ export default function AIGenerate() {
                 <BookOpen className="h-4 w-4" />
                 Create Study Set ({selectedCards.size} cards)
                 <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Save Set */}
+        {step === 'save' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Save className="h-5 w-5" />
+                  Save Your Flashcard Set
+                </CardTitle>
+                <CardDescription>
+                  Customize your set details and choose visibility settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Set Title *</Label>
+                  <Input
+                    id="title"
+                    value={setTitle}
+                    onChange={(e) => setSetTitle(e.target.value)}
+                    placeholder="Enter a title for your flashcard set"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {setTitle.length}/100 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={setDescription}
+                    onChange={(e) => setSetDescription(e.target.value)}
+                    placeholder="Describe what this set is about (optional)"
+                    rows={3}
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {setDescription.length}/500 characters
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Visibility</Label>
+                  <RadioGroup value={isPublic ? 'public' : 'private'} onValueChange={(value) => setIsPublic(value === 'public')}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="private" id="private" />
+                      <Label htmlFor="private" className="flex items-center gap-2 cursor-pointer">
+                        <Lock className="h-4 w-4" />
+                        <div>
+                          <p className="font-medium">Private</p>
+                          <p className="text-sm text-muted-foreground">Only you can see and study this set</p>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="public" id="public" />
+                      <Label htmlFor="public" className="flex items-center gap-2 cursor-pointer">
+                        <Globe className="h-4 w-4" />
+                        <div>
+                          <p className="font-medium">Public</p>
+                          <p className="text-sm text-muted-foreground">Anyone can find and study this set</p>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Set Summary</p>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>• {selectedCards.size} flashcards selected</p>
+                    <p>• {difficulty} difficulty level</p>
+                    <p>• Generated from: {parsedContent?.fileName || 'uploaded file'}</p>
+                    <p>• {isPublic ? 'Public - visible to everyone' : 'Private - visible only to you'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep('review')}
+                className="flex-1"
+                disabled={isSaving}
+              >
+                Back to Review
+              </Button>
+              <Button
+                onClick={handleSaveSet}
+                disabled={!setTitle.trim() || isSaving}
+                className="flex-1 gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Set ({selectedCards.size} cards)
+                  </>
+                )}
               </Button>
             </div>
           </div>
