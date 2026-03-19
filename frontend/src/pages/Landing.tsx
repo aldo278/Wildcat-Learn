@@ -52,12 +52,12 @@ export default function Landing() {
             
             <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
               Master Anything with{" "}
-              <span className="gradient-text">FlashLearn</span>
+              <span className="gradient-text">Wildcat Learn</span>
             </h1>
             
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              The ultimate flashcard study tool. Create sets, learn with smart algorithms, 
-              test your knowledge, and share with others.
+              The not official Linfield University learning platform. Create flashcard sets, learn with smart algorithms, 
+              test your knowledge, and excel in your courses.
             </p>
             
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -72,6 +72,11 @@ export default function Landing() {
                   Explore Sets
                 </Button>
               </Link>
+              <Link to="/auth?mode=login">
+                <Button variant="ghost" size="xl" className="gap-2 px-8">
+                  Sign In
+                </Button>
+              </Link>
             </div>
             
             <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
@@ -81,7 +86,7 @@ export default function Landing() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-success" />
-                <span>No credit card</span>
+                <span>For Linfield student</span>
               </div>
             </div>
           </div>
@@ -93,10 +98,10 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              Everything you need to study effectively
+              Everything Linfield students need to succeed
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Powerful features designed to help you learn faster and remember longer.
+              Powerful features designed specifically for Linfield University courses and academic excellence.
             </p>
           </div>
           
@@ -132,10 +137,10 @@ export default function Landing() {
             <div className="relative mx-auto max-w-2xl text-center">
               <GraduationCap className="mx-auto h-16 w-16 text-primary-foreground/80" />
               <h2 className="mt-6 font-display text-3xl font-bold text-primary-foreground sm:text-4xl">
-                Ready to ace your next exam?
+                Ready to excel at Linfield?
               </h2>
               <p className="mt-4 text-lg text-primary-foreground/80">
-                Join thousands of students who are already learning smarter with FlashLearn.
+                Join hundreds of Linfield students who are already mastering their courses with Wildcat Learn.
               </p>
               <div className="mt-8">
                 <Link to="/auth?mode=signup">
@@ -158,10 +163,10 @@ export default function Landing() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
                 <GraduationCap className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-display text-lg font-bold">FlashLearn</span>
+              <span className="font-display text-lg font-bold">Wildcat Learn</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 FlashLearn. Learn smarter, achieve more.
+              © 2024 Wildcat Learn. Linfield University's unofficial learning platform.
             </p>
           </div>
         </div>

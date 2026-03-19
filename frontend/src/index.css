@@ -3,16 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Flashcard App Design System - Quizlet-inspired modern educational theme */
+/* Linfield University Design System - Cardinal & Purple Theme */
 
 @layer base {
   :root {
-    /* Primary - Rich Indigo */
-    --primary: 239 84% 67%;
+    /* Primary - Linfield Cardinal Red */
+    --primary: 354 85% 45%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary - Warm Coral */
-    --secondary: 16 85% 66%;
+    /* Secondary - Linfield Royal Purple */
+    --secondary: 261 58% 24%;
     --secondary-foreground: 0 0% 100%;
     
     /* Background & Surfaces */
@@ -29,9 +29,9 @@
     --muted: 220 14% 92%;
     --muted-foreground: 220 9% 46%;
     
-    /* Accent - Light Indigo */
-    --accent: 239 84% 95%;
-    --accent-foreground: 239 84% 47%;
+    /* Accent - Light Purple */
+    --accent: 261 58% 95%;
+    --accent-foreground: 261 58% 24%;
     
     /* Success - Correct answers */
     --success: 142 76% 36%;
@@ -48,40 +48,40 @@
     /* UI Elements */
     --border: 220 13% 87%;
     --input: 220 13% 87%;
-    --ring: 239 84% 67%;
+    --ring: 354 85% 45%;
     
     --radius: 0.75rem;
     
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(260, 100%, 65%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(16, 85%, 66%) 0%, hsl(340, 82%, 60%) 100%);
+    /* Gradients - Linfield Inspired */
+    --gradient-primary: linear-gradient(135deg, hsl(354, 85%, 45%) 0%, hsl(354, 80%, 55%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(261, 58%, 24%) 0%, hsl(261, 65%, 35%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(160, 84%, 39%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(280, 87%, 63%) 50%, hsl(340, 82%, 63%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(354, 85%, 45%) 0%, hsl(261, 58%, 24%) 50%, hsl(261, 65%, 45%) 100%);
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(220 20% 10% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.1), 0 2px 4px -2px hsl(220 20% 10% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(220 20% 10% / 0.1), 0 4px 6px -4px hsl(220 20% 10% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(220 20% 10% / 0.1), 0 8px 10px -6px hsl(220 20% 10% / 0.1);
-    --shadow-card: 0 4px 20px -4px hsl(239 84% 67% / 0.15);
-    --shadow-card-hover: 0 8px 30px -4px hsl(239 84% 67% / 0.25);
+    --shadow-card: 0 4px 20px -4px hsl(354 85% 45% / 0.15);
+    --shadow-card-hover: 0 8px 30px -4px hsl(354 85% 45% / 0.25);
     
-    /* Sidebar */
+    /* Sidebar - Linfield Theme */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary: 354 85% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 239 84% 95%;
-    --sidebar-accent-foreground: 239 84% 47%;
+    --sidebar-accent: 261 58% 95%;
+    --sidebar-accent-foreground: 261 58% 24%;
     --sidebar-border: 220 13% 87%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-ring: 354 85% 45%;
   }
 
   .dark {
-    --primary: 239 84% 67%;
+    --primary: 354 85% 45%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 16 85% 66%;
+    --secondary: 261 58% 24%;
     --secondary-foreground: 0 0% 100%;
     
     --background: 222 47% 6%;
@@ -96,8 +96,8 @@
     --muted: 222 30% 15%;
     --muted-foreground: 220 9% 60%;
     
-    --accent: 239 50% 20%;
-    --accent-foreground: 239 84% 75%;
+    --accent: 261 58% 20%;
+    --accent-foreground: 261 58% 75%;
     
     --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
@@ -110,16 +110,16 @@
     
     --border: 222 30% 18%;
     --input: 222 30% 18%;
-    --ring: 239 84% 67%;
+    --ring: 354 85% 45%;
     
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 220 20% 95%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary: 354 85% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 239 50% 20%;
-    --sidebar-accent-foreground: 239 84% 75%;
+    --sidebar-accent: 261 58% 20%;
+    --sidebar-accent-foreground: 261 58% 75%;
     --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-ring: 354 85% 45%;
   }
 }
 
@@ -248,10 +248,10 @@
   
   @keyframes pulse-glow {
     0%, 100% {
-      box-shadow: 0 0 0 0 hsl(239 84% 67% / 0.4);
+      box-shadow: 0 0 0 0 hsl(354 85% 45% / 0.4);
     }
     50% {
-      box-shadow: 0 0 0 10px hsl(239 84% 67% / 0);
+      box-shadow: 0 0 0 10px hsl(354 85% 45% / 0);
     }
   }
   

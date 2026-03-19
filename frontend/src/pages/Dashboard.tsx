@@ -23,7 +23,7 @@ export default function Dashboard() {
       }
       
       try {
-        const response = await fetch('http://localhost:3001/api/sets/', {
+        const response = await fetch('http://localhost:5555/api/sets/', {
           headers: {
             'Authorization': `Bearer ${token}`,
           }
@@ -74,10 +74,10 @@ export default function Dashboard() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">
-              Welcome back! 👋
+              Welcome back to Wildcat Learn! 👋
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Ready to continue learning?
+              Ready to excel in your Linfield courses?
             </p>
           </div>
           <div className="flex gap-3">

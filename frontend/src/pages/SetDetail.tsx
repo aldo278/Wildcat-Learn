@@ -61,7 +61,7 @@ export default function SetDetail() {
       
       try {
         // Fetch set details
-        const setResponse = await fetch(`http://localhost:3001/api/sets/${id}`, {
+        const setResponse = await fetch(`http://localhost:5555/api/sets/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           }
@@ -74,7 +74,7 @@ export default function SetDetail() {
         const setData = await setResponse.json();
         
         // Fetch cards for this set
-        const cardsResponse = await fetch(`http://localhost:3001/api/cards/set/${id}`, {
+        const cardsResponse = await fetch(`http://localhost:5555/api/cards/set/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           }

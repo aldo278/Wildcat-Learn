@@ -75,7 +75,7 @@ export default function CreateSet() {
     
     try {
       // Create the flashcard set
-      const setResponse = await fetch('http://localhost:3001/api/sets', {
+      const setResponse = await fetch('http://localhost:5555/api/sets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export default function CreateSet() {
       const setData = await setResponse.json();
       
       // Create the flashcards
-      const cardsResponse = await fetch('http://localhost:3001/api/cards/batch', {
+      const cardsResponse = await fetch('http://localhost:5555/api/cards/batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -24,7 +24,7 @@ export function Header() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
             <img src="/wildcat.ico" alt="Wildcat logo" className="h-5 w-5 object-contain" />
           </div>
-          <span className="font-display text-xl font-bold text-foreground">FlashLearn</span>
+          <span className="font-display text-xl font-bold text-foreground">Wildcat Learn</span>
         </Link>
         
         {/* Desktop Navigation */}

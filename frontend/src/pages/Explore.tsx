@@ -16,7 +16,7 @@ export default function Explore() {
   useEffect(() => {
     const fetchPublicSets = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/sets/public');
+        const response = await fetch('http://localhost:5555/api/sets/public');
         
         if (!response.ok) {
           throw new Error('Failed to fetch public sets');
