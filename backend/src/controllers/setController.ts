@@ -93,12 +93,14 @@ export class SetController {
         return res.status(401).json({ message: 'User not authenticated' });
       }
 
-      const { title, description, isPublic }: CreateSetInput = req.body;
+      const { title, description, className, classSubject, isPublic }: CreateSetInput = req.body;
 
       const set = await prisma.flashcardSet.create({
         data: {
           title,
           description: description || '',
+          className: className || null,
+          classSubject: classSubject || null,
           isPublic: isPublic || false,
           authorId: userId
         },

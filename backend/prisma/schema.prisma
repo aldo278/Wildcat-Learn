@@ -28,13 +28,15 @@ model User {
 }
 
 model FlashcardSet {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  isPublic    Boolean  @default(false)
-  studyCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  className    String?
+  classSubject String?
+  isPublic     Boolean  @default(false)
+  studyCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   // Relations
   authorId   String

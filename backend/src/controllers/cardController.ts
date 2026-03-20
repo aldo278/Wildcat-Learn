@@ -57,6 +57,17 @@ export class CardController {
     }
   }
 
+  async deleteCardsBySet(req: AuthRequest, res: Response) {
+    try {
+      const { setId } = req.params;
+      await prisma.flashcard.deleteMany({ where: { setId } });
+      res.json({ message: 'All cards in set deleted successfully' });
+    } catch (error) {
+      console.error('Delete cards by set error:', error);
+      res.status(500).json({ message: 'Failed to delete cards' });
+    }
+  }
+
   async createCards(req: AuthRequest, res: Response) {
     try {
       const { setId, cards } = req.body;

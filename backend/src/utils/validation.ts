@@ -16,12 +16,16 @@ export const loginSchema = z.object({
 export const createSetSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
+  className: z.string().optional(),
+  classSubject: z.string().optional(),
   isPublic: z.boolean().optional().default(false)
 });
 
 export const updateSetSchema = z.object({
   title: z.string().min(1, 'Title is required').optional(),
   description: z.string().optional(),
+  className: z.string().optional(),
+  classSubject: z.string().optional(),
   isPublic: z.boolean().optional()
 });
 

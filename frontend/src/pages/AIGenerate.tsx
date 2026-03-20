@@ -28,6 +28,8 @@ import {
   Settings,
   Lightbulb,
   BookOpen,
+  GraduationCap,
+  Sparkles,
   Save,
   Globe,
   Lock
@@ -46,7 +48,11 @@ export default function AIGenerate() {
   const { token } = useAuth();
 
   const [step, setStep] = useState<'upload' | 'configure' | 'generate' | 'review' | 'save'>('upload');
+  const [inputMode, setInputMode] = useState<'file' | 'text' | 'url'>('file');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedContent, setParsedContent] = useState<ParsedContent | null>(null);
+  const [pastedText, setPastedText] = useState('');
+  const [pastedUrl, setPastedUrl] = useState('');
   const [cardCount, setCardCount] = useState([10]);
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
   const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
@@ -54,6 +60,8 @@ export default function AIGenerate() {
   // Save form states
   const [setTitle, setSetTitle] = useState('');
   const [setDescription, setSetDescription] = useState('');
+  const [setClassName, setSetClassName] = useState('');
+  const [setClassSubject, setSetClassSubject] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -158,6 +166,8 @@ export default function AIGenerate() {
         body: JSON.stringify({
           title: setTitle.trim(),
           description: setDescription.trim(),
+          className: setClassName.trim() || undefined,
+          classSubject: setClassSubject.trim() || undefined,
           isPublic
         })
       });
@@ -227,25 +237,47 @@ export default function AIGenerate() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <Wand2 className="h-6 w-6 text-primary" />
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative container mx-auto px-4 py-12 flex items-center justify-center min-h-[400px]">
+          <div className="max-w-4xl text-center w-full">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <GraduationCap className="h-8 w-8 text-yellow-400" />
+              <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
+                Powered by Gemini AI 
+              </span>
             </div>
-            <div>
-              <h1 className="font-display text-3xl font-bold text-foreground">
-                AI Flashcard Generator
-              </h1>
-              <p className="text-muted-foreground">
-                Upload your study materials and let AI create flashcards for you
-              </p>
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
+              <span className="text-yellow-400">AI</span> Flashcard Generator
+            </h1>
+            <p className="text-lg md:text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+              Upload your notes or paste lecture notes. AI will turn it to a ready-to-study set in seconds
+            </p>
+            
+            {/* How-it-works Pills */}
+            <div className="flex justify-center items-center gap-2 md:gap-4">
+              {['Upload', 'Configure', 'Generate', 'Review'].map((step, index) => (
+                <div key={step} className="flex items-center gap-2 md:gap-4">
+                  <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-white/20 border-2 border-white text-white rounded-full font-bold text-sm md:text-lg">
+                    {index + 1}
+                  </div>
+                  <span className="text-white text-sm md:text-base font-medium hidden sm:block">
+                    {step}
+                  </span>
+                  {index < 3 && (
+                    <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-white/60" />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-between mb-8">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-8">
             {[
               { step: 'upload', label: 'Upload', icon: Upload },
               { step: 'configure', label: 'Configure', icon: Settings },
@@ -277,7 +309,6 @@ export default function AIGenerate() {
               </div>
             ))}
           </div>
-        </div>
 
         {/* Error Alert */}
         {error && (
@@ -289,24 +320,139 @@ export default function AIGenerate() {
 
         {/* Step 1: Upload */}
         {step === 'upload' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Upload Study Material
-              </CardTitle>
-              <CardDescription>
-                Upload a PDF, DOCX, or TXT file containing the content you want to study
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onFileRemove={handleFileRemove}
-                isProcessing={false}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Input Mode Tabs */}
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+              {[
+                { mode: 'file' as const, label: 'Upload', icon: Upload },
+                { mode: 'text' as const, label: 'Paste text', icon: FileText },
+                { mode: 'url' as const, label: 'Paste URL', icon: Globe }
+              ].map((tab) => (
+                <button
+                  key={tab.mode}
+                  onClick={() => setInputMode(tab.mode)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    inputMode === tab.mode
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Upload Content */}
+            <Card>
+              <CardContent className="p-6">
+                {inputMode === 'file' && (
+                  <div className="space-y-4">
+                    {/* Redesigned Drop Zone */}
+                    <div className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center bg-purple-50/50 hover:bg-purple-50 transition-colors">
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Upload className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Choose your study material
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        Drag and drop your file here, or click to browse
+                      </p>
+                      <Button className="bg-purple-600 hover:bg-purple-700">
+                        Browse files
+                      </Button>
+                      <div className="flex justify-center gap-2 mt-4">
+                        {['PDF', 'DOCX', 'TXT'].map((format) => (
+                          <span key={format} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                            {format}
+                          </span>
+                        ))}
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                          10 MB max
+                        </span>
+                      </div>
+                    </div>
+                    <FileUpload
+                      onFileSelect={handleFileSelect}
+                      onFileRemove={handleFileRemove}
+                      isProcessing={false}
+                    />
+                  </div>
+                )}
+
+                {inputMode === 'text' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="pasted-text" className="text-sm font-medium text-gray-900">
+                        Paste your study material
+                      </Label>
+                      <Textarea
+                        id="pasted-text"
+                        placeholder="Paste your lecture notes, textbook content, or study material here..."
+                        value={pastedText}
+                        onChange={(e) => setPastedText(e.target.value)}
+                        className="mt-2 min-h-[200px]"
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        if (pastedText.trim()) {
+                          setParsedContent({ text: pastedText, fileName: 'Pasted Text', fileType: 'txt' });
+                          setStep('configure');
+                          toast.success('Text added successfully!');
+                        } else {
+                          toast.error('Please enter some text');
+                        }
+                      }}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      Continue to Configuration
+                    </Button>
+                  </div>
+                )}
+
+                {inputMode === 'url' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="pasted-url" className="text-sm font-medium text-gray-900">
+                        Enter the URL of your study material
+                      </Label>
+                      <Input
+                        id="pasted-url"
+                        type="url"
+                        placeholder="https://canvas.linfield.edu/courses/123/pages/lecture-notes"
+                        value={pastedUrl}
+                        onChange={(e) => setPastedUrl(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        if (pastedUrl.trim()) {
+                          // TODO: Implement URL fetching
+                          toast.info('URL support coming soon!');
+                        } else {
+                          toast.error('Please enter a URL');
+                        }
+                      }}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      Fetch Content
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tip Box */}
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <Lightbulb className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                <strong>Pro tip:</strong> Lecture notes with clear headings work best. Structured content with bullet points, numbered lists, or bold terms will generate better flashcards. Scanned images or handwritten notes won't work properly.
+              </AlertDescription>
+            </Alert>
+          </div>
         )}
 
         {/* Step 2: Configure */}
@@ -344,6 +490,53 @@ export default function AIGenerate() {
               </CardContent>
             </Card>
 
+            {/* Course & Set Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Course & Set Information
+                </CardTitle>
+                <CardDescription>
+                  Add context to organize your flashcards
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="course-code">Course Code</Label>
+                    <Input
+                      id="course-code"
+                      placeholder="e.g., SOAN 111"
+                      value={setClassName}
+                      onChange={(e) => setSetClassName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="set-name">Set Name</Label>
+                    <Input
+                      id="set-name"
+                      placeholder="e.g., Social Science Terms"
+                      value={setTitle}
+                      onChange={(e) => setSetTitle(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    placeholder="e.g., Social Science"
+                    value={setClassSubject}
+                    onChange={(e) => setSetClassSubject(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Configuration */}
             <Card>
               <CardHeader>
@@ -356,22 +549,40 @@ export default function AIGenerate() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Number of Cards */}
+                {/* Visual Card Count Selector */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-3 block">
-                    Number of Flashcards: {cardCount[0]}
-                  </label>
-                  <Slider
-                    value={cardCount}
-                    onValueChange={setCardCount}
-                    max={30}
-                    min={5}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>5</span>
-                    <span>30</span>
+                  <Label className="text-sm font-medium text-foreground mb-3 block">
+                    Number of Flashcards
+                  </Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { count: 10, label: '10', recommended: true },
+                      { count: 20, label: '20', recommended: false },
+                      { count: 40, label: '40', recommended: false },
+                      { count: 0, label: 'Custom', recommended: false }
+                    ].map((option) => (
+                      <button
+                        key={option.label}
+                        onClick={() => {
+                          if (option.count === 0) {
+                            // TODO: Implement custom input
+                            toast.info('Custom count coming soon!');
+                          } else {
+                            setCardCount([option.count]);
+                          }
+                        }}
+                        className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                          cardCount[0] === option.count && option.count !== 0
+                            ? 'border-purple-500 bg-purple-50 text-purple-700'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="text-lg font-bold">{option.label}</div>
+                        {option.recommended && (
+                          <div className="text-xs text-purple-600 font-medium">Recommended</div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -408,28 +619,33 @@ export default function AIGenerate() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStep('upload')}
-                    className="flex-1"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isLoading}
-                    className="flex-1 gap-2"
-                  >
-                    {isLoading ? (
-                      'Generating...'
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4" />
-                        Generate Flashcards
-                      </>
-                    )}
-                  </Button>
+                <div className="space-y-3 pt-4">
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep('upload')}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleGenerate}
+                      disabled={isLoading}
+                      className="flex-1 gap-2"
+                    >
+                      {isLoading ? (
+                        'Generating...'
+                      ) : (
+                        <>
+                          <Wand2 className="h-4 w-4" />
+                          Generate Flashcards
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-center text-sm text-gray-500">
+                    Takes about 10–20 seconds
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -624,6 +840,27 @@ export default function AIGenerate() {
                   <p className="text-xs text-muted-foreground">
                     {setDescription.length}/500 characters
                   </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="className">Class Name <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Input
+                      id="className"
+                      value={setClassName}
+                      onChange={(e) => setSetClassName(e.target.value)}
+                      placeholder='e.g. "BIOL 201"'
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="classSubject">Class Subject <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Input
+                      id="classSubject"
+                      value={setClassSubject}
+                      onChange={(e) => setSetClassSubject(e.target.value)}
+                      placeholder='e.g. "Science"'
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">

@@ -34,7 +34,7 @@ export function Header() {
               <Button
                 variant={isActive(link.path) ? "default" : "ghost"}
                 size="sm"
-                className={isActive(link.path) ? "" : "text-muted-foreground hover:text-foreground"}
+                className={isActive(link.path) ? "bg-purple-600 hover:bg-purple-700" : "text-muted-foreground hover:text-foreground"}
               >
                 {link.label}
               </Button>
@@ -49,7 +49,11 @@ export function Header() {
           ) : user ? (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4" />
+                <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-900 font-bold text-sm">
+                    {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </span>
+                </div>
                 <span className="text-muted-foreground">Welcome back, {user.name}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={logout}>

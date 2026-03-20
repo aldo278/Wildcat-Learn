@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { SetCard } from "@/components/flashcard/SetCard";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, BookOpen, Brain, FileText, Wand2 } from "lucide-react";
+import { Plus, Search, BookOpen, Brain, FileText, Wand2, GraduationCap, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -37,10 +37,12 @@ export default function Dashboard() {
         // Transform backend data to match frontend FlashcardSet interface
         const transformedSets = (data.sets || []).map((set: any) => ({
           ...set,
-          cards: [], // We'll load cards when navigating to the set detail page
+          cards: [],
           authorName: set.author?.name || 'You',
           cardCount: set._count?.cards || 0,
-          studyCount: 0 // TODO: Add study tracking later
+          className: set.className || null,
+          classSubject: set.classSubject || null,
+          studyCount: 0
         }));
         setUserSets(transformedSets);
       } catch (error) {
@@ -69,66 +71,119 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-foreground">
-              Welcome back to Wildcat Learn! 👋
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              Ready to excel in your Linfield courses?
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Link to="/ai-generate">
-              <Button variant="outline" size="lg" className="gap-2">
-                <Wand2 className="h-5 w-5" />
-                AI Generate
-              </Button>
-            </Link>
-            <Link to="/create">
-              <Button size="lg" className="gap-2">
-                <Plus className="h-5 w-5" />
-                Create Set
-              </Button>
-            </Link>
+      {/* Hero Section - Condensed with Inline Stats */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative container mx-auto px-4 py-8">
+          <div className="max-w-6xl">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+              {/* Left: Welcome Content */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <GraduationCap className="h-8 w-8 text-yellow-400" />
+                  <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
+                    Built for Linfield Wildcats
+                  </span>
+                </div>
+                <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+                  Welcome back to <span className="text-yellow-400">Wildcat Learn</span>! 👋
+                </h1>
+                <p className="text-lg md:text-xl text-purple-100 mb-6 max-w-2xl">
+                  You have {stats.totalCards > 0 ? Math.min(14, stats.totalCards) : 0} cards due for review today. Keep your streak alive!
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link to="/create">
+                    <Button size="lg" className="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold gap-2">
+                      <Plus className="h-5 w-5" />
+                      Create New Set
+                    </Button>
+                  </Link>
+                  <Link to="/ai-generate">
+                    <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-purple-900 font-bold gap-2">
+                      <Sparkles className="h-5 w-5" />
+                      Generate Set
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Right: Inline Stats */}
+              <div className="flex gap-6 lg:gap-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-1">{stats.totalSets}</div>
+                  <div className="text-sm text-purple-200">Sets</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-1">{stats.totalCards}</div>
+                  <div className="text-sm text-purple-200">Cards</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-400 mb-1">{stats.totalStudies}</div>
+                  <div className="text-sm text-purple-200">Sessions</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+
+      <main className="container mx-auto px-4 py-6">
         
-        {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                <BookOpen className="h-6 w-6 text-primary" />
+        {/* Streak Bar */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">🔥</span>
+                </div>
+                <span className="font-semibold text-foreground">7 Day Streak!</span>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalSets}</p>
-                <p className="text-sm text-muted-foreground">Study Sets</p>
-              </div>
+              <span className="text-sm text-muted-foreground">Keep it going!</span>
+            </div>
+            <div className="flex gap-1">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
+                <div
+                  key={index}
+                  className={`flex-1 h-8 rounded flex items-center justify-center text-xs font-medium ${
+                    index < 5 
+                      ? 'bg-orange-500 text-white' 
+                      : index === 5 
+                      ? 'bg-orange-100 text-orange-600 border-2 border-orange-300' 
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {day}
+                </div>
+              ))}
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/10">
-                <FileText className="h-6 w-6 text-secondary" />
+        </div>
+
+        {/* Due for Review Section */}
+        <div className="mb-8">
+          <h2 className="font-display text-xl font-bold text-foreground mb-4">Due for Review</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-red-600 font-semibold">Overdue</span>
+                <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-bold">2</span>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalCards}</p>
-                <p className="text-sm text-muted-foreground">Total Cards</p>
-              </div>
+              <p className="text-sm text-red-700">Math 101 • Biology Terms</p>
             </div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
-                <Brain className="h-6 w-6 text-success" />
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-yellow-600 font-semibold">Due Today</span>
+                <span className="bg-yellow-100 text-yellow-600 px-2 py-1 rounded-full text-xs font-bold">3</span>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalStudies}</p>
-                <p className="text-sm text-muted-foreground">Study Sessions</p>
+              <p className="text-sm text-yellow-700">History 202 • Spanish Vocab</p>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-600 font-semibold">Done</span>
+                <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs font-bold">5</span>
               </div>
+              <p className="text-sm text-green-700">Science 101 • English Lit</p>
             </div>
           </div>
         </div>
@@ -144,6 +199,33 @@ export default function Dashboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+          </div>
+        </div>
+        
+        {/* Your Sets Section */}
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold text-foreground mb-4">Your Study Sets</h2>
+          
+          {/* Filter Chips */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button className="px-3 py-1 rounded-full bg-purple-600 text-white text-sm font-medium">
+              All Sets
+            </button>
+            <button className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+              Math
+            </button>
+            <button className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+              Science
+            </button>
+            <button className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+              History
+            </button>
+            <button className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+              English
+            </button>
+            <button className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">
+              Spanish
+            </button>
           </div>
         </div>
         
@@ -164,7 +246,7 @@ export default function Dashboard() {
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <SetCard set={set} />
+                <SetCard set={set} accentIndex={index} />
               </div>
             ))
           ) : (

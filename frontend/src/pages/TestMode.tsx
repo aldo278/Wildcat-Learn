@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -67,19 +67,54 @@ export default function TestMode() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  // Check for AI-generated test questions first
+  const [isAITest, setIsAITest] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState<TestQuestion[]>([]);
+  const [aiClassInfo, setAiClassInfo] = useState<{className?: string, classSubject?: string}>({});
+  
   const set = getSetById(id || "");
   
-  const [questions, setQuestions] = useState<TestQuestion[]>(() => generateQuestions(set));
+  const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [shortAnswer, setShortAnswer] = useState("");
   const [isAnswered, setIsAnswered] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [skippedQuestions, setSkippedQuestions] = useState<Set<number>>(new Set());
   
   const answeredQuestions = questions.filter(q => q.userAnswer !== undefined);
   const correctCount = questions.filter(q => q.isCorrect).length;
+  const wrongCount = answeredQuestions.filter(q => !q.isCorrect).length;
+  const skippedCount = skippedQuestions.size;
   
-  if (!set) {
+  // Check for AI-generated test questions
+  useEffect(() => {
+    const storedTestData = sessionStorage.getItem('aiTestQuestions');
+    if (storedTestData) {
+      try {
+        const testData = JSON.parse(storedTestData);
+        const questions = testData.questions || testData; // Handle both old and new format
+        setAiQuestions(questions);
+        setQuestions(questions);
+        setIsAITest(true);
+        
+        // Store class info for AI tests
+        if (testData.className || testData.classSubject) {
+          setAiClassInfo({
+            className: testData.className,
+            classSubject: testData.classSubject
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing AI test questions:', error);
+      }
+    } else if (set) {
+      // Use regular generated questions for non-AI tests
+      setQuestions(generateQuestions(set));
+    }
+  }, [set]);
+  
+  if (!set && !isAITest) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -129,12 +164,40 @@ export default function TestMode() {
   };
   
   const handleRestart = () => {
-    setQuestions(generateQuestions(set));
+    if (isAITest && aiQuestions.length > 0) {
+      // Reset AI-generated questions
+      const resetQuestions = aiQuestions.map(q => ({ ...q, userAnswer: undefined, isCorrect: false }));
+      setQuestions(resetQuestions);
+    } else {
+      // Reset regular generated questions
+      setQuestions(generateQuestions(set));
+    }
     setCurrentIndex(0);
     setSelectedAnswer("");
     setShortAnswer("");
     setIsAnswered(false);
     setIsComplete(false);
+    setSkippedQuestions(new Set());
+  };
+
+  const handleSkip = () => {
+    setSkippedQuestions(prev => new Set(prev).add(currentIndex));
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+      setSelectedAnswer("");
+      setShortAnswer("");
+      setIsAnswered(false);
+    } else {
+      setIsComplete(true);
+    }
+  };
+
+  const handleBackToDashboard = () => {
+    // Clean up AI test questions from sessionStorage
+    if (isAITest) {
+      sessionStorage.removeItem('aiTestQuestions');
+    }
+    navigate('/dashboard');
   };
   
   const score = Math.round((correctCount / questions.length) * 100);
@@ -174,11 +237,17 @@ export default function TestMode() {
                 <RotateCcw className="h-5 w-5" />
                 Try Again
               </Button>
-              <Link to={`/set/${id}/learn`}>
-                <Button size="lg" className="w-full sm:w-auto">
-                  Practice in Learn Mode
+              {isAITest ? (
+                <Button onClick={handleBackToDashboard} size="lg" className="w-full sm:w-auto">
+                  Back to Dashboard
                 </Button>
-              </Link>
+              ) : (
+                <Link to={`/set/${id}/learn`}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Practice in Learn Mode
+                  </Button>
+                </Link>
+              )}
             </div>
             
             {/* Results breakdown */}
@@ -228,28 +297,68 @@ export default function TestMode() {
       <main className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <Link 
-          to={`/set/${id}`} 
+          to={isAITest ? "/dashboard" : `/set/${id}`} 
           className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to {set.title}
+          Back to {isAITest ? "Dashboard" : set?.title}
         </Link>
         
         <div className="mx-auto max-w-2xl">
-          {/* Header */}
-          <div className="mb-6 text-center">
-            <h1 className="font-display text-2xl font-bold text-foreground">Test Mode</h1>
-            <p className="mt-1 text-muted-foreground">
-              Question {currentIndex + 1} of {questions.length}
-            </p>
+          {/* Header with Class Info */}
+          <div className="mb-6">
+            <div className="text-center mb-4">
+              <h1 className="font-display text-3xl font-bold text-foreground">
+                Test Yourself
+              </h1>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                {(set && set.className) || (isAITest && aiClassInfo.className) ? (
+                  <span className="rounded-md bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                    {set?.className || aiClassInfo.className}
+                  </span>
+                ) : null}
+                {(set && set.classSubject) || (isAITest && aiClassInfo.classSubject) ? (
+                  <span className="rounded-md bg-secondary/10 px-3 py-1 text-sm font-semibold text-secondary">
+                    {set?.classSubject || aiClassInfo.classSubject}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
           
           {/* Progress */}
           <ProgressBar 
             current={currentIndex + 1} 
             total={questions.length} 
-            className="mb-8"
+            className="mb-6"
           />
+          
+          {/* Status Bar - Individual Question Dots */}
+          <div className="mb-8">
+            <div className="flex justify-center items-center gap-2">
+              {questions.map((question, index) => {
+                let dotColor = "bg-gray-300"; // Default: not answered
+                if (question.isCorrect === true) {
+                  dotColor = "bg-green-500"; // Correct
+                } else if (question.isCorrect === false) {
+                  dotColor = "bg-red-500"; // Wrong
+                } else if (skippedQuestions.has(index)) {
+                  dotColor = "bg-gray-400"; // Skipped
+                }
+                
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-colors",
+                      dotColor,
+                      index === currentIndex && "ring-2 ring-primary ring-offset-2"
+                    )}
+                  />
+                );
+              })}
+            </div>
+          </div>
           
           {/* Question Card */}
           {currentQuestion && (
@@ -274,7 +383,42 @@ export default function TestMode() {
               </h2>
               
               {/* Answer Options */}
-              {currentQuestion.type !== "short-answer" && currentQuestion.options && (
+              {/* True/False Questions */}
+              {currentQuestion.type === "true-false" && (
+                <div className="grid grid-cols-2 gap-4">
+                  {["True", "False"].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => !isAnswered && setSelectedAnswer(option)}
+                      disabled={isAnswered}
+                      className={cn(
+                        "rounded-lg border-2 p-4 text-center transition-all font-medium relative",
+                        !isAnswered && selectedAnswer === option && "border-primary bg-primary/5 text-primary",
+                        !isAnswered && selectedAnswer !== option && "border-border hover:border-primary/50",
+                        isAnswered && option === currentQuestion.correctAnswer && "border-green-500 bg-green-50 text-green-800",
+                        isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "border-red-500 bg-red-50 text-red-800"
+                      )}
+                    >
+                      {isAnswered && option === currentQuestion.correctAnswer && (
+                        <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1">
+                          <Check className="h-4 w-4" />
+                        </div>
+                      )}
+                      {isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && (
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1">
+                          <X className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-center">
+                        <span className="font-bold">{option}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Multiple Choice Questions */}
+              {currentQuestion.type === "multiple-choice" && currentQuestion.options && (
                 <div className="space-y-3">
                   {currentQuestion.options.map((option, i) => (
                     <button
@@ -282,27 +426,37 @@ export default function TestMode() {
                       onClick={() => !isAnswered && setSelectedAnswer(option)}
                       disabled={isAnswered}
                       className={cn(
-                        "w-full rounded-lg border-2 p-4 text-left transition-all",
+                        "w-full rounded-lg border-2 p-4 text-left transition-all relative",
                         !isAnswered && selectedAnswer === option && "border-primary bg-primary/5",
                         !isAnswered && selectedAnswer !== option && "border-border hover:border-primary/50",
-                        isAnswered && option === currentQuestion.correctAnswer && "border-success bg-success/10",
-                        isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "border-destructive bg-destructive/10"
+                        isAnswered && option === currentQuestion.correctAnswer && "border-green-500 bg-green-50",
+                        isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "border-red-500 bg-red-50"
                       )}
                     >
+                      {isAnswered && option === currentQuestion.correctAnswer && (
+                        <div className="absolute top-4 right-4 bg-green-500 text-white rounded-full p-1">
+                          <Check className="h-4 w-4" />
+                        </div>
+                      )}
+                      {isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && (
+                        <div className="absolute top-4 right-4 bg-red-500 text-white rounded-full p-1">
+                          <X className="h-4 w-4" />
+                        </div>
+                      )}
                       <div className="flex items-center gap-3">
                         <span className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
-                          selectedAnswer === option ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
+                          selectedAnswer === option ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                          isAnswered && option === currentQuestion.correctAnswer && "bg-green-500 text-white",
+                          isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "bg-red-500 text-white"
                         )}>
                           {String.fromCharCode(65 + i)}
                         </span>
-                        <span className="font-medium text-foreground">{option}</span>
-                        {isAnswered && option === currentQuestion.correctAnswer && (
-                          <Check className="ml-auto h-5 w-5 text-success" />
-                        )}
-                        {isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && (
-                          <X className="ml-auto h-5 w-5 text-destructive" />
-                        )}
+                        <span className={cn(
+                          "font-medium flex-1",
+                          isAnswered && option === currentQuestion.correctAnswer && "text-green-800",
+                          isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "text-red-800"
+                        )}>{option}</span>
                       </div>
                     </button>
                   ))}
@@ -323,30 +477,52 @@ export default function TestMode() {
                       isAnswered && !currentQuestion.isCorrect && "border-destructive"
                     )}
                   />
-                  {isAnswered && !currentQuestion.isCorrect && (
-                    <p className="mt-2 text-sm text-success flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      Correct answer: {currentQuestion.correctAnswer}
+                  {isAnswered && (
+                  <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Explanation:</p>
+                    <p className="text-sm text-blue-700">
+                      {currentQuestion.explanation || 
+                       (currentQuestion.isCorrect 
+                         ? "Great job! You got this question correct." 
+                         : `The correct answer is: ${currentQuestion.correctAnswer}. Review this concept to improve your understanding.`)}
                     </p>
-                  )}
+                  </div>
+                )}
+                {isAnswered && !currentQuestion.isCorrect && (
+                  <p className="mt-2 text-sm text-success flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Correct answer: {currentQuestion.correctAnswer}
+                  </p>
+                )}
                 </div>
               )}
               
               {/* Action Buttons */}
-              <div className="mt-8 flex justify-end gap-3">
-                {!isAnswered ? (
+              <div className="mt-8 flex justify-between">
+                {!isAnswered && (
                   <Button 
-                    onClick={handleSubmitAnswer}
-                    disabled={!selectedAnswer && !shortAnswer}
+                    variant="outline"
+                    onClick={handleSkip}
                     size="lg"
                   >
-                    Submit Answer
-                  </Button>
-                ) : (
-                  <Button onClick={handleNext} size="lg">
-                    {currentIndex < questions.length - 1 ? "Next Question" : "See Results"}
+                    Skip
                   </Button>
                 )}
+                <div className="flex gap-3 ml-auto">
+                  {!isAnswered ? (
+                    <Button 
+                      onClick={handleSubmitAnswer}
+                      disabled={!selectedAnswer && !shortAnswer}
+                      size="lg"
+                    >
+                      Submit Answer
+                    </Button>
+                  ) : (
+                    <Button onClick={handleNext} size="lg">
+                      {currentIndex < questions.length - 1 ? "Next Question" : "See Results"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}

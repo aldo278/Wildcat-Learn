@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Save } from "lucide-react";
+import { Plus, Trash2, GripVertical, Save, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,8 @@ export default function CreateSet() {
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [className, setClassName] = useState("");
+  const [classSubject, setClassSubject] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [cards, setCards] = useState<CardInput[]>([
@@ -84,6 +86,8 @@ export default function CreateSet() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
+          className: className.trim() || undefined,
+          classSubject: classSubject.trim() || undefined,
           isPublic
         })
       });
@@ -133,16 +137,37 @@ export default function CreateSet() {
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-2 mb-4">
+              <GraduationCap className="h-8 w-8 text-yellow-400" />
+              <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
+                Built for Linfield Wildcats
+              </span>
+            </div>
+            <h1 className="font-display text-5xl md:text-6xl font-bold mb-6">
+              Create <span className="text-yellow-400">Study Set</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-purple-100 mb-8 max-w-2xl">
+              Build your personalized flashcard collection for any course
+            </p>
+          </div>
+        </div>
+      </section>
+
       <main className="container mx-auto px-4 py-8">
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="font-display text-3xl font-bold text-foreground">
-                Create New Set
-              </h1>
+              <h2 className="font-display text-2xl font-bold text-foreground">
+                Set Details
+              </h2>
               <p className="mt-1 text-muted-foreground">
-                Add flashcards to create your study set
+                Configure your flashcard set information
               </p>
             </div>
             <div>
@@ -163,7 +188,7 @@ export default function CreateSet() {
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder='e.g. "Spanish Vocabulary" or "Biology Chapter 5"'
+                  placeholder='e.g. "Cell Biology Midterm"'
                   className="text-lg"
                 />
               </div>
@@ -191,9 +216,31 @@ export default function CreateSet() {
                 </div>
               </div>
             </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Class Name <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                <Input
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder='e.g. "BIOL 201" or "ECON 220"'
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Class Subject <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                <Input
+                  value={classSubject}
+                  onChange={(e) => setClassSubject(e.target.value)}
+                  placeholder='e.g. "Science", "Business", "Math"'
+                />
+              </div>
+            </div>
             <div className="mt-4">
               <label className="mb-2 block text-sm font-medium text-foreground">
-                Description (optional)
+                Description <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
               <Textarea
                 value={description}

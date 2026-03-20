@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { SetCard } from "@/components/flashcard/SetCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, TrendingUp, Clock, BookOpen } from "lucide-react";
+import { Search, TrendingUp, Clock, BookOpen, GraduationCap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Explore() {
@@ -26,10 +26,12 @@ export default function Explore() {
         // Transform backend data to match frontend FlashcardSet interface
         const transformedSets = (data.sets || []).map((set: any) => ({
           ...set,
-          cards: [], // We'll load cards when navigating to the set detail page
+          cards: [],
           authorName: set.author?.name || 'Anonymous',
           cardCount: set._count?.cards || 0,
-          studyCount: 0 // TODO: Add study tracking later
+          className: set.className || null,
+          classSubject: set.classSubject || null,
+          studyCount: 0
         }));
         setPublicSets(transformedSets);
       } catch (error) {
@@ -58,16 +60,28 @@ export default function Explore() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-4xl font-bold text-foreground">
-            Explore Study Sets
-          </h1>
-          <p className="mt-2 text-lg text-muted-foreground">
-            Discover flashcard sets created by the community
-          </p>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="max-w-4xl text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <GraduationCap className="h-8 w-8 text-yellow-400" />
+              <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
+                Built for Linfield Wildcats
+              </span>
+            </div>
+            <h1 className="font-display text-5xl md:text-6xl font-bold mb-6">
+              Explore <span className="text-yellow-400">Study Sets</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-purple-100 mb-8 max-w-2xl mx-auto">
+              Discover flashcard sets created by the Linfield community
+            </p>
+          </div>
         </div>
+      </section>
+
+      <main className="container mx-auto px-4 py-8">
         
         {/* Search */}
         <div className="mx-auto mb-8 max-w-xl">
@@ -120,7 +134,7 @@ export default function Explore() {
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <SetCard set={set} />
+                <SetCard set={set} accentIndex={index} />
               </div>
             ))
           ) : (

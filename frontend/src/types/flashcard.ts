@@ -9,6 +9,8 @@ export interface FlashcardSet {
   id: string;
   title: string;
   description: string;
+  className?: string;
+  classSubject?: string;
   cards: Flashcard[];
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +18,7 @@ export interface FlashcardSet {
   authorName: string;
   isPublic: boolean;
   studyCount: number;
+  cardCount?: number;
 }
 
 export interface StudyProgress {
@@ -33,6 +36,7 @@ export interface TestQuestion {
   options?: string[];
   userAnswer?: string;
   isCorrect?: boolean;
+  explanation?: string;
 }
 
 export interface TestResult {

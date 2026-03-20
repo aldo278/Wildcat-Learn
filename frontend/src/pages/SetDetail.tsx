@@ -3,7 +3,9 @@ import { Header } from "@/components/layout/Header";
 import { FlashcardDisplay } from "@/components/flashcard/FlashcardDisplay";
 import { AITestGenerator } from "@/components/test/AITestGenerator";
 import { Button } from "@/components/ui/button";
-import { FlashcardSet } from "@/types/flashcard";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { FlashcardSet, Flashcard } from "@/types/flashcard";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -13,7 +15,12 @@ import {
   Share2, 
   Users,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Trash2,
+  Save,
+  X,
+  GripVertical
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ProgressBar } from "@/components/flashcard/ProgressBar";
@@ -29,6 +36,15 @@ export default function SetDetail() {
   const [set, setSet] = useState<FlashcardSet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { token } = useAuth();
+  
+  // Edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassSubject, setEditClassSubject] = useState('');
+  const [editCards, setEditCards] = useState<Flashcard[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Check sessionStorage first for AI-generated sets, then fetch from backend
   useEffect(() => {
@@ -91,7 +107,9 @@ export default function SetDetail() {
           ...setData.set,
           cards: cardsData.cards || [],
           authorName: setData.set.author?.name || 'You',
-          studyCount: 0 // TODO: Add study tracking later
+          className: setData.set.className || null,
+          classSubject: setData.set.classSubject || null,
+          studyCount: 0
         };
         
         setSet(transformedSet);
@@ -147,9 +165,140 @@ export default function SetDetail() {
 
   const handleAITestGenerated = (questions: TestQuestion[]) => {
     setAiTestQuestions(questions);
-    // Store AI questions in session storage for the test mode
-    sessionStorage.setItem('aiTestQuestions', JSON.stringify(questions));
+    // Store AI questions and class info in session storage for the test mode
+    const testData = {
+      questions,
+      className: set.className,
+      classSubject: set.classSubject
+    };
+    sessionStorage.setItem('aiTestQuestions', JSON.stringify(testData));
     navigate(`/set/${set.id}/test`);
+  };
+
+  const startEditing = () => {
+    if (!set) return;
+    setIsEditing(true);
+    setEditTitle(set.title);
+    setEditDescription(set.description || '');
+    setEditClassName(set.className || '');
+    setEditClassSubject(set.classSubject || '');
+    setEditCards([...set.cards]);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditTitle('');
+    setEditDescription('');
+    setEditClassName('');
+    setEditClassSubject('');
+    setEditCards([]);
+  };
+
+  const addEditCard = () => {
+    const newCard: Flashcard = {
+      id: `new-${Date.now()}`,
+      term: '',
+      definition: '',
+      createdAt: new Date(),
+    };
+    setEditCards([...editCards, newCard]);
+  };
+
+  const removeEditCard = (cardId: string) => {
+    if (editCards.length <= 1) {
+      toast.error('You need at least 1 card');
+      return;
+    }
+    setEditCards(editCards.filter(card => card.id !== cardId));
+  };
+
+  const updateEditCard = (cardId: string, field: 'term' | 'definition', value: string) => {
+    setEditCards(editCards.map(card => 
+      card.id === cardId ? { ...card, [field]: value } : card
+    ));
+  };
+
+  const saveChanges = async () => {
+    if (!set || !token) return;
+
+    if (!editTitle.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+
+    const validCards = editCards.filter(card => card.term.trim() && card.definition.trim());
+    if (validCards.length === 0) {
+      toast.error('Please add at least 1 complete card');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Update set details
+      const setResponse = await fetch(`http://localhost:5555/api/sets/${set.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          className: editClassName.trim() || undefined,
+          classSubject: editClassSubject.trim() || undefined,
+        })
+      });
+
+      if (!setResponse.ok) {
+        throw new Error('Failed to update set');
+      }
+
+      // Update cards - delete all existing cards and create new ones
+      await fetch(`http://localhost:5555/api/cards/set/${set.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      const cardsResponse = await fetch('http://localhost:5555/api/cards/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          setId: set.id,
+          cards: validCards.map(card => ({
+            term: card.term.trim(),
+            definition: card.definition.trim()
+          }))
+        })
+      });
+
+      if (!cardsResponse.ok) {
+        throw new Error('Failed to update cards');
+      }
+
+      // Update local state
+      setSet({
+        ...set,
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        className: editClassName.trim() || null,
+        classSubject: editClassSubject.trim() || null,
+        cards: validCards
+      });
+
+      setIsEditing(false);
+      toast.success('Set updated successfully!');
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -166,6 +315,21 @@ export default function SetDetail() {
         {/* Set Header */}
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
+            {/* Class tags */}
+            {(set.className || set.classSubject) && (
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                {set.className && (
+                  <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                    {set.className}
+                  </span>
+                )}
+                {set.classSubject && (
+                  <span className="rounded-md bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">
+                    {set.classSubject}
+                  </span>
+                )}
+              </div>
+            )}
             <h1 className="font-display text-3xl font-bold text-foreground">
               {set.title}
             </h1>
@@ -184,16 +348,75 @@ export default function SetDetail() {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Edit3 className="h-4 w-4" />
-              Edit
-            </Button>
+            {!isEditing ? (
+              <>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={startEditing}>
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" className="gap-2" onClick={cancelEditing} disabled={isSaving}>
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button size="sm" className="gap-2" onClick={saveChanges} disabled={isSaving}>
+                  <Save className="h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
+        
+        {/* Edit Mode Form */}
+        {isEditing && (
+          <div className="mb-8 rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 font-display text-xl font-bold text-foreground">Edit Set Details</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Title</label>
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Set title"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">Class Name (optional)</label>
+                  <Input
+                    value={editClassName}
+                    onChange={(e) => setEditClassName(e.target.value)}
+                    placeholder='e.g. "BIOL 201"'
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">Class Subject (optional)</label>
+                  <Input
+                    value={editClassSubject}
+                    onChange={(e) => setEditClassSubject(e.target.value)}
+                    placeholder='e.g. "Science"'
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Description (optional)</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Set description"
+                  rows={2}
+                />
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Study Mode Cards */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -286,23 +509,63 @@ export default function SetDetail() {
         
         {/* All Cards List */}
         <div className="mt-12">
-          <h2 className="mb-4 font-display text-xl font-bold text-foreground">
-            All Cards ({set.cards.length})
-          </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-bold text-foreground">
+              All Cards ({isEditing ? editCards.length : set.cards.length})
+            </h2>
+            {isEditing && (
+              <Button onClick={addEditCard} variant="outline" size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Card
+              </Button>
+            )}
+          </div>
           <div className="space-y-3">
-            {set.cards.map((card, index) => (
+            {(isEditing ? editCards : set.cards).map((card, index) => (
               <div
                 key={card.id}
-                className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-primary/30 transition-colors"
-                onClick={() => setCurrentCardIndex(index)}
+                className={`flex items-center gap-4 rounded-lg border border-border bg-card p-4 ${
+                  !isEditing ? 'cursor-pointer hover:border-primary/30 transition-colors' : ''
+                }`}
+                onClick={!isEditing ? () => setCurrentCardIndex(index) : undefined}
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
                   {index + 1}
                 </span>
-                <div className="flex-1 grid grid-cols-2 gap-4">
-                  <p className="font-medium text-foreground">{card.term}</p>
-                  <p className="text-muted-foreground">{card.definition}</p>
-                </div>
+                {isEditing ? (
+                  <>
+                    <div className="flex-1 grid grid-cols-2 gap-4">
+                      <Input
+                        value={card.term}
+                        onChange={(e) => updateEditCard(card.id, 'term', e.target.value)}
+                        placeholder="Term"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <Input
+                        value={card.definition}
+                        onChange={(e) => updateEditCard(card.id, 'definition', e.target.value)}
+                        placeholder="Definition"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeEditCard(card.id);
+                      }}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex-1 grid grid-cols-2 gap-4">
+                    <p className="font-medium text-foreground">{card.term}</p>
+                    <p className="text-muted-foreground">{card.definition}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
