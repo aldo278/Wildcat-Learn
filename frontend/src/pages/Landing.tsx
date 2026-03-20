@@ -118,18 +118,18 @@ export default function Landing() {
             {/* CTA Buttons */}
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to="/auth?mode=signup">
-                <Button size="lg" className="gap-2 rounded-full bg-white px-8 text-[#1a0a2e] font-semibold hover:bg-gray-100">
+                <Button size="lg" className="gap-2 rounded-full bg-white px-8 text-[#1a0a2e] font-semibold hover:bg-yellow-400 hover:text-[#1a0a2e] transition-colors">
                   Get Started Free
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/explore">
-                <Button size="lg" variant="outline" className="gap-2 rounded-full border-white/30 px-8 text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="gap-2 rounded-full border-white/30 px-8 text-white hover:bg-white hover:text-[#1a0a2e] hover:border-white transition-colors">
                   Explore Sets
                 </Button>
               </Link>
               <Link to="/auth?mode=login">
-                <Button size="lg" variant="ghost" className="rounded-full px-8 text-white hover:bg-white/10">
+                <Button size="lg" variant="ghost" className="rounded-full px-8 text-white hover:bg-white hover:text-[#1a0a2e] transition-colors">
                   Sign In
                 </Button>
               </Link>
