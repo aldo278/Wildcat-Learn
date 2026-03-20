@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userSets, setUserSets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   
   // Fetch user's sets from backend
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-                  Welcome back to <span className="text-yellow-400">Wildcat Learn</span>! 👋
+                  Welcome Back, {user?.name?.split(' ')[0]}! 👋
                 </h1>
                 <p className="text-lg md:text-xl text-purple-100 mb-6 max-w-2xl">
                   You have {stats.totalCards > 0 ? Math.min(14, stats.totalCards) : 0} cards due for review today. Keep your streak alive!
