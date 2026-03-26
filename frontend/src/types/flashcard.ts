@@ -2,49 +2,54 @@ export interface Flashcard {
   id: string;
   term: string;
   definition: string;
-  createdAt: Date;
+  created_at: string;
+  set_id: string;
 }
 
 export interface FlashcardSet {
   id: string;
   title: string;
   description: string;
-  className?: string;
-  classSubject?: string;
-  cards: Flashcard[];
-  createdAt: Date;
-  updatedAt: Date;
-  authorId: string;
-  authorName: string;
-  isPublic: boolean;
-  studyCount: number;
-  cardCount?: number;
+  class_name?: string;
+  class_subject?: string;
+  cards?: Flashcard[];
+  created_at: string;
+  updated_at: string;
+  author_id: string;
+  author_name: string;
+  is_public: boolean;
+  study_count: number;
+  card_count?: number;
 }
 
 export interface StudyProgress {
-  cardId: string;
+  id: string;
+  card_id: string;
+  user_id: string;
   known: boolean;
   attempts: number;
-  lastStudied: Date;
+  last_studied: string;
 }
 
 export interface TestQuestion {
   id: string;
+  test_result_id: string;
   type: 'multiple-choice' | 'true-false' | 'short-answer';
   question: string;
-  correctAnswer: string;
-  options?: string[];
-  userAnswer?: string;
-  isCorrect?: boolean;
-  explanation?: string;
+  correct_answer: string;
+  options?: string;
+  user_answer?: string;
+  is_correct?: boolean;
 }
 
 export interface TestResult {
-  setId: string;
+  id: string;
+  user_id: string;
+  set_id: string;
   score: number;
-  totalQuestions: number;
-  questions: TestQuestion[];
-  completedAt: Date;
+  total_questions: number;
+  completed_at: string;
+  questions?: TestQuestion[];
 }
 
 export interface User {
@@ -52,5 +57,5 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  createdAt: Date;
+  created_at: string;
 }

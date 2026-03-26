@@ -8,6 +8,7 @@ import { Plus, Trash2, GripVertical, Save, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { setsApi, cardsApi } from "@/lib/api";
 
 interface CardInput {
   id: string;
@@ -77,48 +78,22 @@ export default function CreateSet() {
     
     try {
       // Create the flashcard set
-      const setResponse = await fetch('http://localhost:5555/api/sets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          className: className.trim() || undefined,
-          classSubject: classSubject.trim() || undefined,
-          isPublic
-        })
+      const setData = await setsApi.create({
+        title: title.trim(),
+        description: description.trim(),
+        class_name: className.trim() || undefined,
+        class_subject: classSubject.trim() || undefined,
+        is_public: isPublic
       });
-      
-      if (!setResponse.ok) {
-        const errorData = await setResponse.json();
-        throw new Error(errorData.message || 'Failed to create set');
-      }
-      
-      const setData = await setResponse.json();
       
       // Create the flashcards
-      const cardsResponse = await fetch('http://localhost:5555/api/cards/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          setId: setData.set.id,
-          cards: validCards.map(card => ({
-            term: card.term.trim(),
-            definition: card.definition.trim()
-          }))
-        })
+      await cardsApi.createMultiple({
+        setId: setData.set.id,
+        cards: validCards.map(card => ({
+          term: card.term.trim(),
+          definition: card.definition.trim()
+        }))
       });
-      
-      if (!cardsResponse.ok) {
-        const errorData = await cardsResponse.json();
-        throw new Error(errorData.message || 'Failed to create cards');
-      }
       
       toast.success("Set created successfully!");
       navigate(`/set/${setData.set.id}`);

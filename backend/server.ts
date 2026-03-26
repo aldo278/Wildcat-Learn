@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import { supabase } from './src/config/supabase';
 
 // Import routes
 import authRoutes from './src/routes/auth';
@@ -13,29 +13,7 @@ import progressRoutes from './src/routes/progress';
 import testRoutes from './src/routes/tests';
 
 // Load environment variables
-import path from 'path';
-import fs from 'fs';
-
-// Manually load .env file due to encoding issues
-const envPath = path.resolve(process.cwd(), '.env');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf16le');
-  const lines = envContent.split('\n').filter(line => line.trim());
-  
-  lines.forEach(line => {
-    const equalIndex = line.indexOf('=');
-    if (equalIndex > 0) {
-      const key = line.substring(0, equalIndex).replace(/^\uFEFF/, '').trim(); // Remove BOM
-      const value = line.substring(equalIndex + 1).trim();
-      process.env[key] = value;
-    }
-  });
-}
-
 dotenv.config();
-
-// Initialize Prisma Client
-export const prisma = new PrismaClient();
 
 // Create Express app
 const app = express();
@@ -84,9 +62,13 @@ app.use('*', (req, res) => {
 // Start server
 const startServer = async () => {
   try {
-    // Test database connection
-    await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    // Test Supabase connection
+    const { error } = await supabase.from('profiles').select('count').limit(1);
+    if (error) {
+      console.warn('⚠️ Supabase connection warning:', error.message);
+    } else {
+      console.log('✅ Supabase connected successfully');
+    }
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
@@ -101,13 +83,11 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('🔄 Shutting down gracefully...');
-  await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('🔄 Shutting down gracefully...');
-  await prisma.$disconnect();
   process.exit(0);
 });
 

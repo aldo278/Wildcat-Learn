@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../server';
+import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 
 export class TestController {
@@ -8,10 +8,16 @@ export class TestController {
       const { setId, questionCount, questionTypes } = req.body;
       
       // Get cards from set
-      const cards = await prisma.flashcard.findMany({
-        where: { setId },
-        take: questionCount || 10
-      });
+      const { data: cards, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('set_id', setId)
+        .limit(questionCount || 10);
+
+      if (error || !cards) {
+        console.error('Generate test error:', error);
+        return res.status(500).json({ message: 'Failed to generate test' });
+      }
 
       // Generate test questions (simplified version)
       const questions = cards.map(card => ({
@@ -43,29 +49,51 @@ export class TestController {
 
       const { setId, score, totalQuestions, questions } = req.body;
 
-      const testResult = await prisma.testResult.create({
-        data: {
-          userId,
-          setId,
+      // Create test result
+      const { data: testResult, error: resultError } = await supabase
+        .from('test_results')
+        .insert({
+          user_id: userId,
+          set_id: setId,
           score,
-          totalQuestions,
-          questions: {
-            create: questions.map((q: any) => ({
-              type: q.type,
-              question: q.question,
-              correctAnswer: q.correctAnswer,
-              options: q.options || [],
-              userAnswer: q.userAnswer,
-              isCorrect: q.isCorrect
-            }))
-          }
-        },
-        include: {
-          questions: true
+          total_questions: totalQuestions,
+          completed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (resultError || !testResult) {
+        console.error('Save test result error:', resultError);
+        return res.status(500).json({ message: 'Failed to save test result' });
+      }
+
+      // Create test questions
+      const questionsData = questions.map((q: any) => ({
+        test_result_id: testResult.id,
+        type: q.type,
+        question: q.question,
+        correct_answer: q.correctAnswer,
+        options: JSON.stringify(q.options || []),
+        user_answer: q.userAnswer,
+        is_correct: q.isCorrect
+      }));
+
+      const { data: createdQuestions, error: questionsError } = await supabase
+        .from('test_questions')
+        .insert(questionsData)
+        .select();
+
+      if (questionsError) {
+        console.error('Save test questions error:', questionsError);
+        return res.status(500).json({ message: 'Failed to save test questions' });
+      }
+
+      res.status(201).json({ 
+        testResult: {
+          ...testResult,
+          questions: createdQuestions
         }
       });
-
-      res.status(201).json({ testResult });
     } catch (error) {
       console.error('Save test result error:', error);
       res.status(500).json({ message: 'Failed to save test result' });
@@ -75,16 +103,20 @@ export class TestController {
   async getUserTestHistory(req: AuthRequest, res: Response) {
     try {
       const { userId } = req.params;
-      const testResults = await prisma.testResult.findMany({
-        where: { userId },
-        include: {
-          set: {
-            select: { id: true, title: true }
-          },
-          questions: true
-        },
-        orderBy: { completedAt: 'desc' }
-      });
+      const { data: testResults, error } = await supabase
+        .from('test_results')
+        .select(`
+          *,
+          set:flashcard_sets(id, title),
+          questions:test_questions(*)
+        `)
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: false });
+
+      if (error) {
+        console.error('Get test history error:', error);
+        return res.status(500).json({ message: 'Failed to fetch test history' });
+      }
 
       res.json({ testResults });
     } catch (error) {

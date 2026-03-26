@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../../server';
+import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import { RegisterInput, LoginInput } from '../utils/validation';
 
@@ -10,50 +8,51 @@ export class AuthController {
     try {
       const { email, name, password }: RegisterInput = req.body;
 
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists with this email' });
-      }
-
-      // Hash password
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          email,
-          name,
-          password: hashedPassword // We'll add password field to schema later
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          createdAt: true
+      // Register user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name
+          }
         }
       });
 
-      // Generate JWT token
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET is not defined');
+      if (authError) {
+        return res.status(400).json({ message: authError.message });
       }
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email },
-        jwtSecret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-      );
+      if (!authData.user) {
+        return res.status(400).json({ message: 'Failed to create user' });
+      }
+
+      // Create user profile in profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email,
+          name,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        return res.status(500).json({ message: 'Failed to create user profile' });
+      }
 
       res.status(201).json({
         message: 'User registered successfully',
-        user,
-        token
+        user: {
+          id: profile.id,
+          email: profile.email,
+          name: profile.name
+        },
+        session: authData.session
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -65,42 +64,35 @@ export class AuthController {
     try {
       const { email, password }: LoginInput = req.body;
 
-      // Find user
-      const user = await prisma.user.findUnique({
-        where: { email }
+      // Sign in with Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (!user) {
+      if (error) {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
 
-      // For now, we'll skip password verification since we haven't added password to schema
-      // In a real implementation, you'd verify the password here
-      // const isValidPassword = await bcrypt.compare(password, user.password);
-      // if (!isValidPassword) {
-      //   return res.status(401).json({ message: 'Invalid email or password' });
-      // }
-
-      // Generate JWT token
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET is not defined');
+      if (!data.user) {
+        return res.status(401).json({ message: 'Invalid email or password' });
       }
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email },
-        jwtSecret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-      );
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email, name')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        return res.status(500).json({ message: 'Failed to fetch user profile' });
+      }
 
       res.json({
         message: 'Login successful',
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        },
-        token
+        user: profile,
+        session: data.session
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -131,8 +123,13 @@ export class AuthController {
 
   async logout(req: AuthRequest, res: Response) {
     try {
-      // In a stateless JWT setup, logout is typically handled on the client side
-      // by removing the token from storage
+      const token = req.header('Authorization')?.replace('Bearer ', '');
+      
+      if (token) {
+        // Sign out from Supabase
+        await supabase.auth.signOut();
+      }
+      
       res.json({ message: 'Logout successful' });
     } catch (error) {
       console.error('Logout error:', error);

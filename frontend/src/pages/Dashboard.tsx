@@ -7,6 +7,7 @@ import { Plus, Search, BookOpen, Brain, FileText, Wand2, GraduationCap, Sparkles
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { setsApi } from "@/lib/api";
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,26 +24,16 @@ export default function Dashboard() {
       }
       
       try {
-        const response = await fetch('http://localhost:5555/api/sets/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch sets');
-        }
-        
-        const data = await response.json();
+        const data = await setsApi.getUserSets();
         // Transform backend data to match frontend FlashcardSet interface
         const transformedSets = (data.sets || []).map((set: any) => ({
           ...set,
           cards: [],
-          authorName: set.author?.name || 'You',
-          cardCount: set._count?.cards || 0,
-          className: set.className || null,
-          classSubject: set.classSubject || null,
-          studyCount: 0
+          author_name: set.author?.name || 'You',
+          card_count: set._count?.cards || 0,
+          class_name: set.class_name || null,
+          class_subject: set.class_subject || null,
+          study_count: 0
         }));
         setUserSets(transformedSets);
       } catch (error) {
@@ -63,8 +54,8 @@ export default function Dashboard() {
   
   const stats = {
     totalSets: userSets.length,
-    totalCards: userSets.reduce((acc: number, set: any) => acc + (set.cardCount || 0), 0),
-    totalStudies: userSets.reduce((acc: number, set: any) => acc + (set.studyCount || 0), 0),
+    totalCards: userSets.reduce((acc: number, set: any) => acc + (set.card_count || 0), 0),
+    totalStudies: userSets.reduce((acc: number, set: any) => acc + (set.study_count || 0), 0),
   };
 
   return (

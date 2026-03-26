@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, TrendingUp, Clock, BookOpen, GraduationCap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { setsApi } from "@/lib/api";
 
 export default function Explore() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,22 +17,16 @@ export default function Explore() {
   useEffect(() => {
     const fetchPublicSets = async () => {
       try {
-        const response = await fetch('http://localhost:5555/api/sets/public');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch public sets');
-        }
-        
-        const data = await response.json();
+        const data = await setsApi.getPublic();
         // Transform backend data to match frontend FlashcardSet interface
         const transformedSets = (data.sets || []).map((set: any) => ({
           ...set,
           cards: [],
-          authorName: set.author?.name || 'Anonymous',
-          cardCount: set._count?.cards || 0,
-          className: set.className || null,
-          classSubject: set.classSubject || null,
-          studyCount: 0
+          author_name: set.author?.name || 'Anonymous',
+          card_count: set._count?.cards || 0,
+          class_name: set.class_name || null,
+          class_subject: set.class_subject || null,
+          study_count: 0
         }));
         setPublicSets(transformedSets);
       } catch (error) {

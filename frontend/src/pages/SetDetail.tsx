@@ -27,6 +27,7 @@ import { ProgressBar } from "@/components/flashcard/ProgressBar";
 import { TestQuestion } from "@/types/flashcard";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { setsApi, cardsApi } from "@/lib/api";
 
 export default function SetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -77,39 +78,19 @@ export default function SetDetail() {
       
       try {
         // Fetch set details
-        const setResponse = await fetch(`http://localhost:5555/api/sets/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        });
-        
-        if (!setResponse.ok) {
-          throw new Error('Set not found');
-        }
-        
-        const setData = await setResponse.json();
+        const setData = await setsApi.getById(id!);
         
         // Fetch cards for this set
-        const cardsResponse = await fetch(`http://localhost:5555/api/cards/set/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        });
-        
-        if (!cardsResponse.ok) {
-          throw new Error('Failed to fetch cards');
-        }
-        
-        const cardsData = await cardsResponse.json();
+        const cardsData = await cardsApi.getBySet(id!);
         
         // Transform to match FlashcardSet interface
         const transformedSet: FlashcardSet = {
           ...setData.set,
           cards: cardsData.cards || [],
-          authorName: setData.set.author?.name || 'You',
-          className: setData.set.className || null,
-          classSubject: setData.set.classSubject || null,
-          studyCount: 0
+          author_name: setData.set.author?.name || 'You',
+          class_name: setData.set.class_name || null,
+          class_subject: setData.set.class_subject || null,
+          study_count: 0
         };
         
         setSet(transformedSet);

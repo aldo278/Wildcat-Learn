@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../../server';
+import { supabase } from '../config/supabase';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -18,32 +17,53 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
+    // Verify JWT token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    
-    // Verify user exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, email: true, name: true }
-    });
-
-    if (!user) {
+    if (error || !user) {
       return res.status(401).json({ message: 'Invalid token.' });
     }
 
-    req.user = user;
+    // Fetch user profile from database
+    let { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .eq('id', user.id)
+      .single();
+
+    // If profile doesn't exist, create it
+    if (profileError && profileError.code === 'PGRST116') {
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || 'User',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('id, email, name')
+        .single();
+
+      if (createError) {
+        console.error('Profile creation error:', createError);
+        return res.status(500).json({ message: 'Failed to create user profile' });
+      }
+
+      profile = newProfile;
+    } else if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ message: 'Failed to fetch user profile' });
+    }
+
+    if (!profile) {
+      return res.status(500).json({ message: 'Failed to create user profile' });
+    }
+
+    req.user = profile;
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Invalid token.' });
-    }
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ message: 'Token expired.' });
-    }
+    console.error('Auth middleware error:', error);
     return res.status(500).json({ message: 'Server error during authentication.' });
   }
 };

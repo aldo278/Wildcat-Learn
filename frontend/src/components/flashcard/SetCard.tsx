@@ -31,7 +31,7 @@ interface SetCardProps {
 
 export function SetCard({ set, className, accentIndex = 0 }: SetCardProps) {
   const idx = accentIndex % ACCENT_COLORS.length;
-  const cardCount = set.cardCount || set.cards?.length || 0;
+  const cardCount = set.card_count || set.cards?.length || 0;
 
   return (
     <div
@@ -43,24 +43,24 @@ export function SetCard({ set, className, accentIndex = 0 }: SetCardProps) {
     >
       {/* Tags */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        {set.className && (
+        {set.class_name && (
           <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            {set.className}
+            {set.class_name}
           </span>
         )}
-        {set.classSubject && (
+        {set.class_subject && (
           <span
             className={cn(
               "rounded-md px-2.5 py-1 text-xs font-semibold",
-              SUBJECT_COLORS[set.classSubject] || SUBJECT_COLORS.default
+              SUBJECT_COLORS[set.class_subject] || SUBJECT_COLORS.default
             )}
           >
-            {set.classSubject}
+            {set.class_subject}
           </span>
         )}
-        {!set.className && !set.classSubject && (
+        {!set.class_name && !set.class_subject && (
           <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-            {set.isPublic ? "Public" : "Private"}
+            {set.is_public ? "Public" : "Private"}
           </span>
         )}
       </div>
@@ -87,7 +87,7 @@ export function SetCard({ set, className, accentIndex = 0 }: SetCardProps) {
         <Star className="ml-1.5 mb-0.5 inline h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        by {set.authorName}
+        by {set.author_name}
       </p>
 
       {/* Action Buttons */}

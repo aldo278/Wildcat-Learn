@@ -1,15 +1,22 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../server';
+import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 
 export class CardController {
   async getCardsBySet(req: AuthRequest, res: Response) {
     try {
       const { setId } = req.params;
-      const cards = await prisma.flashcard.findMany({
-        where: { setId },
-        orderBy: { createdAt: 'asc' }
-      });
+      const { data: cards, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('set_id', setId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Get cards error:', error);
+        return res.status(500).json({ message: 'Failed to fetch cards' });
+      }
+
       res.json({ cards });
     } catch (error) {
       console.error('Get cards error:', error);
@@ -21,9 +28,22 @@ export class CardController {
     try {
       const { setId } = req.params;
       const { term, definition } = req.body;
-      const card = await prisma.flashcard.create({
-        data: { term, definition, setId }
-      });
+      const { data: card, error } = await supabase
+        .from('flashcards')
+        .insert({
+          term,
+          definition,
+          set_id: setId,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create card error:', error);
+        return res.status(500).json({ message: 'Failed to create card' });
+      }
+
       res.status(201).json({ card });
     } catch (error) {
       console.error('Create card error:', error);
@@ -35,10 +55,18 @@ export class CardController {
     try {
       const { id } = req.params;
       const updates = req.body;
-      const card = await prisma.flashcard.update({
-        where: { id },
-        data: updates
-      });
+      const { data: card, error } = await supabase
+        .from('flashcards')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Update card error:', error);
+        return res.status(500).json({ message: 'Failed to update card' });
+      }
+
       res.json({ card });
     } catch (error) {
       console.error('Update card error:', error);
@@ -49,7 +77,16 @@ export class CardController {
   async deleteCard(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      await prisma.flashcard.delete({ where: { id } });
+      const { error } = await supabase
+        .from('flashcards')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Delete card error:', error);
+        return res.status(500).json({ message: 'Failed to delete card' });
+      }
+
       res.json({ message: 'Card deleted successfully' });
     } catch (error) {
       console.error('Delete card error:', error);
@@ -60,7 +97,16 @@ export class CardController {
   async deleteCardsBySet(req: AuthRequest, res: Response) {
     try {
       const { setId } = req.params;
-      await prisma.flashcard.deleteMany({ where: { setId } });
+      const { error } = await supabase
+        .from('flashcards')
+        .delete()
+        .eq('set_id', setId);
+
+      if (error) {
+        console.error('Delete cards by set error:', error);
+        return res.status(500).json({ message: 'Failed to delete cards' });
+      }
+
       res.json({ message: 'All cards in set deleted successfully' });
     } catch (error) {
       console.error('Delete cards by set error:', error);
@@ -77,13 +123,22 @@ export class CardController {
       }
       
       const cardsWithSetId = cards.map((card: any) => ({
-        ...card,
-        setId
+        term: card.term,
+        definition: card.definition,
+        set_id: setId,
+        created_at: new Date().toISOString()
       }));
       
-      const createdCards = await prisma.flashcard.createMany({
-        data: cardsWithSetId
-      });
+      const { data: createdCards, error } = await supabase
+        .from('flashcards')
+        .insert(cardsWithSetId)
+        .select();
+
+      if (error) {
+        console.error('Create cards error:', error);
+        return res.status(500).json({ message: 'Failed to create cards' });
+      }
+
       res.status(201).json({ createdCards });
     } catch (error) {
       console.error('Create cards error:', error);

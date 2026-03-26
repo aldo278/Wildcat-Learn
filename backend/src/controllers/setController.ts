@@ -1,23 +1,25 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../server';
+import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import { CreateSetInput, UpdateSetInput } from '../utils/validation';
 
 export class SetController {
   async getPublicSets(req: Request, res: Response) {
     try {
-      const sets = await prisma.flashcardSet.findMany({
-        where: { isPublic: true },
-        include: {
-          author: {
-            select: { id: true, name: true }
-          },
-          _count: {
-            select: { cards: true }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
+      const { data: sets, error } = await supabase
+        .from('flashcard_sets')
+        .select(`
+          *,
+          author:profiles!flashcard_sets_author_id_fkey(id, name),
+          cards:flashcards(count)
+        `)
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Get public sets error:', error);
+        return res.status(500).json({ message: 'Failed to fetch public sets' });
+      }
 
       res.json({ sets });
     } catch (error) {
@@ -30,29 +32,18 @@ export class SetController {
     try {
       const { id } = req.params;
 
-      const set = await prisma.flashcardSet.findUnique({
-        where: { id },
-        include: {
-          author: {
-            select: { id: true, name: true }
-          },
-          cards: {
-            orderBy: { createdAt: 'asc' }
-          },
-          _count: {
-            select: { cards: true }
-          }
-        }
-      });
+      const { data: set, error } = await supabase
+        .from('flashcard_sets')
+        .select(`
+          *,
+          author:profiles!flashcard_sets_author_id_fkey(id, name),
+          cards:flashcards(*)
+        `)
+        .eq('id', id)
+        .single();
 
-      if (!set) {
+      if (error || !set) {
         return res.status(404).json({ message: 'Set not found' });
-      }
-
-      // Check if set is public or user is the author
-      if (!set.isPublic) {
-        // For now, we'll allow access to private sets
-        // In a real implementation, you'd check if the user is the author
       }
 
       res.json({ set });
@@ -69,15 +60,19 @@ export class SetController {
         return res.status(401).json({ message: 'User not authenticated' });
       }
 
-      const sets = await prisma.flashcardSet.findMany({
-        where: { authorId: userId },
-        include: {
-          _count: {
-            select: { cards: true }
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
+      const { data: sets, error } = await supabase
+        .from('flashcard_sets')
+        .select(`
+          *,
+          cards:flashcards(count)
+        `)
+        .eq('author_id', userId)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Get user sets error:', error);
+        return res.status(500).json({ message: 'Failed to fetch user sets' });
+      }
 
       res.json({ sets });
     } catch (error) {
@@ -95,24 +90,28 @@ export class SetController {
 
       const { title, description, className, classSubject, isPublic }: CreateSetInput = req.body;
 
-      const set = await prisma.flashcardSet.create({
-        data: {
+      const { data: set, error } = await supabase
+        .from('flashcard_sets')
+        .insert({
           title,
           description: description || '',
-          className: className || null,
-          classSubject: classSubject || null,
-          isPublic: isPublic || false,
-          authorId: userId
-        },
-        include: {
-          author: {
-            select: { id: true, name: true }
-          },
-          _count: {
-            select: { cards: true }
-          }
-        }
-      });
+          class_name: className || null,
+          class_subject: classSubject || null,
+          is_public: isPublic || false,
+          author_id: userId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select(`
+          *,
+          author:profiles!flashcard_sets_author_id_fkey(id, name)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Create set error:', error);
+        return res.status(500).json({ message: 'Failed to create set' });
+      }
 
       res.status(201).json({ set });
     } catch (error) {
@@ -132,30 +131,43 @@ export class SetController {
       const updates: UpdateSetInput = req.body;
 
       // Check if set exists and user is the author
-      const existingSet = await prisma.flashcardSet.findUnique({
-        where: { id }
-      });
+      const { data: existingSet, error: fetchError } = await supabase
+        .from('flashcard_sets')
+        .select('author_id')
+        .eq('id', id)
+        .single();
 
-      if (!existingSet) {
+      if (fetchError || !existingSet) {
         return res.status(404).json({ message: 'Set not found' });
       }
 
-      if (existingSet.authorId !== userId) {
+      if (existingSet.author_id !== userId) {
         return res.status(403).json({ message: 'Not authorized to update this set' });
       }
 
-      const set = await prisma.flashcardSet.update({
-        where: { id },
-        data: updates,
-        include: {
-          author: {
-            select: { id: true, name: true }
-          },
-          _count: {
-            select: { cards: true }
-          }
-        }
-      });
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.className !== undefined) updateData.class_name = updates.className;
+      if (updates.classSubject !== undefined) updateData.class_subject = updates.classSubject;
+      if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic;
+
+      const { data: set, error } = await supabase
+        .from('flashcard_sets')
+        .update(updateData)
+        .eq('id', id)
+        .select(`
+          *,
+          author:profiles!flashcard_sets_author_id_fkey(id, name)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Update set error:', error);
+        return res.status(500).json({ message: 'Failed to update set' });
+      }
 
       res.json({ set });
     } catch (error) {
@@ -174,21 +186,29 @@ export class SetController {
       const { id } = req.params;
 
       // Check if set exists and user is the author
-      const existingSet = await prisma.flashcardSet.findUnique({
-        where: { id }
-      });
+      const { data: existingSet, error: fetchError } = await supabase
+        .from('flashcard_sets')
+        .select('author_id')
+        .eq('id', id)
+        .single();
 
-      if (!existingSet) {
+      if (fetchError || !existingSet) {
         return res.status(404).json({ message: 'Set not found' });
       }
 
-      if (existingSet.authorId !== userId) {
+      if (existingSet.author_id !== userId) {
         return res.status(403).json({ message: 'Not authorized to delete this set' });
       }
 
-      await prisma.flashcardSet.delete({
-        where: { id }
-      });
+      const { error } = await supabase
+        .from('flashcard_sets')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Delete set error:', error);
+        return res.status(500).json({ message: 'Failed to delete set' });
+      }
 
       res.json({ message: 'Set deleted successfully' });
     } catch (error) {
