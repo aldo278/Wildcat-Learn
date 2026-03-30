@@ -1,10 +1,10 @@
 async function testAuth() {
   try {
-    console.log('🧪 Testing authentication...');
+    console.log('Testing authentication...');
     
     // Test registration
     console.log('\n1. Testing registration...');
-    const registerResponse = await fetch('http://localhost:3001/api/auth/register', {
+    const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,11 +22,11 @@ async function testAuth() {
     
     if (registerResponse.ok) {
       const token = registerData.token;
-      console.log('✅ Registration successful! Token:', token.substring(0, 20) + '...');
+      console.log('Registration successful! Token:', token.substring(0, 20) + '...');
       
       // Test getting user info
       console.log('\n2. Testing user info...');
-      const meResponse = await fetch('http://localhost:3001/api/auth/me', {
+      const meResponse = await fetch('http://localhost:3000/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -38,16 +38,16 @@ async function testAuth() {
       console.log('User info:', meData);
       
       if (meResponse.ok) {
-        console.log('✅ Authentication working correctly!');
+        console.log('Authentication working correctly!');
       } else {
-        console.log('❌ User info test failed');
+        console.log('User info test failed');
       }
     } else {
-      console.log('❌ Registration failed');
+      console.log('Registration failed');
     }
     
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error('Test failed:', error.message);
   }
 }
 

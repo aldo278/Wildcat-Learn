@@ -4,7 +4,7 @@ async function testAISave() {
     
     // First, login to get a token
     console.log('\n1. Logging in...');
-    const loginResponse = await fetch('http://localhost:3001/api/auth/login', {
+    const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ async function testAISave() {
       isPublic: true
     };
     
-    const setResponse = await fetch('http://localhost:3001/api/sets', {
+    const setResponse = await fetch('http://localhost:3000/api/sets', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ async function testAISave() {
       { term: 'Neural Networks', definition: 'Computing systems inspired by biological neural networks' }
     ];
     
-    const cardsResponse = await fetch('http://localhost:3001/api/cards/batch', {
+    const cardsResponse = await fetch('http://localhost:3000/api/cards/batch', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ async function testAISave() {
     
     // Verify the set appears in public sets
     console.log('\n4. Checking public sets...');
-    const publicResponse = await fetch('http://localhost:3001/api/sets/public');
+    const publicResponse = await fetch('http://localhost:3000/api/sets/public');
     
     if (!publicResponse.ok) {
       throw new Error('Failed to fetch public sets');
