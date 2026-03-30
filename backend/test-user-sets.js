@@ -4,7 +4,7 @@ async function testUserSets() {
     
     // First, login to get a token
     console.log('\n1. Logging in...');
-    const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+    const loginResponse = await fetch('http://localhost:5555/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ async function testUserSets() {
     
     // Test the user sets endpoint
     console.log('\n2. Fetching user sets...');
-    const setsResponse = await fetch('http://localhost:3000/api/sets/', {
+    const setsResponse = await fetch('http://localhost:5555/api/sets/', {
       headers: {
         'Authorization': `Bearer ${token}`,
       }

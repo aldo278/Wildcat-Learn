@@ -4,7 +4,7 @@ async function testPublicSets() {
     
     // Test the public sets endpoint
     console.log('\n1. Fetching public sets...');
-    const response = await fetch('http://localhost:3000/api/sets/public');
+    const response = await fetch('http://localhost:5555/api/sets/public');
     
     if (!response.ok) {
       const errorData = await response.json();

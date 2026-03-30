@@ -4,7 +4,7 @@ async function testSetCreation() {
     
     // First, login to get a token
     console.log('\n1. Logging in...');
-    const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+    const loginResponse = await fetch('http://localhost:5555/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ async function testSetCreation() {
     
     // Create a flashcard set
     console.log('\n2. Creating flashcard set...');
-    const setResponse = await fetch('http://localhost:3000/api/sets', {
+    const setResponse = await fetch('http://localhost:5555/api/sets', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ async function testSetCreation() {
     
     // Create flashcards for the set
     console.log('\n3. Creating flashcards...');
-    const cardsResponse = await fetch('http://localhost:3000/api/cards/batch', {
+    const cardsResponse = await fetch('http://localhost:5555/api/cards/batch', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ async function testSetCreation() {
     
     // Get the set with cards to verify
     console.log('\n4. Verifying set with cards...');
-    const verifyResponse = await fetch(`http://localhost:3000/api/cards/set/${setData.set.id}`, {
+    const verifyResponse = await fetch(`http://localhost:5555/api/cards/set/${setData.set.id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       }

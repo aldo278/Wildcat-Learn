@@ -4,7 +4,7 @@ async function testAuth() {
     
     // Test registration
     console.log('\n1. Testing registration...');
-    const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
+    const registerResponse = await fetch('http://localhost:5555/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ async function testAuth() {
       
       // Test getting user info
       console.log('\n2. Testing user info...');
-      const meResponse = await fetch('http://localhost:3000/api/auth/me', {
+      const meResponse = await fetch('http://localhost:5555/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

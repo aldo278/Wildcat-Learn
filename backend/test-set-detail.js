@@ -4,7 +4,7 @@ async function testSetDetail() {
     
     // First, login to get a token
     console.log('\n1. Logging in...');
-    const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+    const loginResponse = await fetch('http://localhost:5555/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ async function testSetDetail() {
     
     // Get a set ID from the user sets
     console.log('\n2. Getting user sets...');
-    const setsResponse = await fetch('http://localhost:3000/api/sets/', {
+    const setsResponse = await fetch('http://localhost:5555/api/sets/', {
       headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -46,7 +46,7 @@ async function testSetDetail() {
     
     // Test the set detail endpoint
     console.log('\n3. Fetching set details...');
-    const setDetailResponse = await fetch(`http://localhost:3000/api/sets/${firstSet.id}`, {
+    const setDetailResponse = await fetch(`http://localhost:5555/api/sets/${firstSet.id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -61,7 +61,7 @@ async function testSetDetail() {
     
     // Test the cards endpoint
     console.log('\n4. Fetching cards for set...');
-    const cardsResponse = await fetch(`http://localhost:3000/api/cards/set/${firstSet.id}`, {
+    const cardsResponse = await fetch(`http://localhost:5555/api/cards/set/${firstSet.id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       }
