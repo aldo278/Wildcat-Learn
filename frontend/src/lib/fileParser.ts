@@ -47,14 +47,36 @@ export class FileParser {
   }
 
   private static async parsePDF(file: File): Promise<{ text: string; pageCount: number }> {
-    // For now, let's return a placeholder until we can get PDF parsing working
-    // The user can still use DOCX and TXT files for flashcard generation
-    console.log('PDF file detected, but PDF parsing is temporarily disabled');
-    
-    return {
-      text: 'PDF parsing is temporarily disabled. Please convert your PDF to TXT or DOCX format for now, or try uploading a different file type.',
-      pageCount: 1,
-    };
+    try {
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import('pdfjs-dist');
+      
+      // Use local worker file from public folder
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      const pageCount = pdf.numPages;
+      let fullText = '';
+
+      for (let i = 1; i <= pageCount; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n\n';
+      }
+
+      return {
+        text: fullText.trim(),
+        pageCount,
+      };
+    } catch (error) {
+      console.error('PDF parsing error:', error);
+      throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private static async parseDocx(file: File): Promise<string> {

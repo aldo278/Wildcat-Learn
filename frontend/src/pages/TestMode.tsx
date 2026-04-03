@@ -3,13 +3,15 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSetById } from "@/data/mockData";
+import { setsApi } from "@/lib/api";
+import { FlashcardSet } from "@/types/flashcard";
 import { ProgressBar } from "@/components/flashcard/ProgressBar";
 import { TestQuestion } from "@/types/flashcard";
 import { ArrowLeft, Check, X, RotateCcw, Trophy, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-function generateQuestions(set: ReturnType<typeof getSetById>): TestQuestion[] {
+function generateQuestions(set: FlashcardSet | null): TestQuestion[] {
   if (!set) return [];
   
   const questions: TestQuestion[] = [];
@@ -31,10 +33,11 @@ function generateQuestions(set: ReturnType<typeof getSetById>): TestQuestion[] {
       
       questions.push({
         id: `q-${card.id}`,
+        test_result_id: "temp", // Will be updated when test is created
         type: "multiple-choice",
         question: `What is the definition of "${card.term}"?`,
-        correctAnswer: card.definition,
-        options,
+        correct_answer: card.definition,
+        options: options.join(","), // Convert array to string
       });
     } else if (type === "true-false") {
       // Randomly decide if statement is true or false
@@ -43,19 +46,21 @@ function generateQuestions(set: ReturnType<typeof getSetById>): TestQuestion[] {
       
       questions.push({
         id: `q-${card.id}`,
+        test_result_id: "temp", // Will be updated when test is created
         type: "true-false",
         question: isTrue 
           ? `"${card.term}" means "${card.definition}"`
           : `"${card.term}" means "${wrongCard?.definition || "something else"}"`,
-        correctAnswer: isTrue ? "True" : "False",
-        options: ["True", "False"],
+        correct_answer: isTrue ? "True" : "False",
+        options: "True,False", // Convert array to string
       });
     } else {
       questions.push({
         id: `q-${card.id}`,
+        test_result_id: "temp", // Will be updated when test is created
         type: "short-answer",
         question: `What is the definition of "${card.term}"?`,
-        correctAnswer: card.definition,
+        correct_answer: card.definition,
       });
     }
   });
@@ -70,9 +75,10 @@ export default function TestMode() {
   // Check for AI-generated test questions first
   const [isAITest, setIsAITest] = useState(false);
   const [aiQuestions, setAiQuestions] = useState<TestQuestion[]>([]);
-  const [aiClassInfo, setAiClassInfo] = useState<{className?: string, classSubject?: string}>({});
+  const [aiClassInfo, setAiClassInfo] = useState<{class_name?: string, class_subject?: string}>({});
   
-  const set = getSetById(id || "");
+  const [set, setSet] = useState<FlashcardSet | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -81,10 +87,78 @@ export default function TestMode() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [skippedQuestions, setSkippedQuestions] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const fetchSet = async () => {
+      if (!id) return;
+      
+      try {
+        const data = await setsApi.getById(id);
+        // Transform backend data to match frontend FlashcardSet interface
+        const transformedSet: FlashcardSet = {
+          ...data.set,
+          cards: data.cards || [],
+          author_name: data.set.author?.name || 'You',
+          card_count: data.set._count?.cards || data.cards?.length || 0,
+          class_name: data.set.class_name || null,
+          class_subject: data.set.class_subject || null,
+          study_count: 0
+        };
+        setSet(transformedSet);
+      } catch (error) {
+        console.error('Error fetching set:', error);
+        toast.error('Failed to load set');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSet();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="text-muted-foreground">Loading set...</div>
+        </div>
+      </div>
+    );
+  }
   
-  const answeredQuestions = questions.filter(q => q.userAnswer !== undefined);
-  const correctCount = questions.filter(q => q.isCorrect).length;
-  const wrongCount = answeredQuestions.filter(q => !q.isCorrect).length;
+  if (!set) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="font-display text-2xl font-bold">Set not found</h1>
+          <Link to="/dashboard" className="mt-4 inline-block text-primary hover:underline">
+            Go back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (set.cards.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="font-display text-2xl font-bold">No cards in this set</h1>
+          <p className="mt-2 text-muted-foreground">Add some flashcards to start testing!</p>
+          <Link to={`/set/${set.id}`} className="mt-4 inline-block text-primary hover:underline">
+            Go back to set details
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  const answeredQuestions = questions.filter(q => q.user_answer !== undefined);
+  const correctCount = questions.filter(q => q.is_correct).length;
+  const wrongCount = answeredQuestions.filter(q => !q.is_correct).length;
   const skippedCount = skippedQuestions.size;
   
   // Check for AI-generated test questions
@@ -99,10 +173,10 @@ export default function TestMode() {
         setIsAITest(true);
         
         // Store class info for AI tests
-        if (testData.className || testData.classSubject) {
+        if (testData.class_name || testData.class_subject) {
           setAiClassInfo({
-            className: testData.className,
-            classSubject: testData.classSubject
+            class_name: testData.class_name,
+            class_subject: testData.class_subject
           });
         }
       } catch (error) {
@@ -134,18 +208,18 @@ export default function TestMode() {
     if (!currentQuestion) return;
     
     let answer = currentQuestion.type === "short-answer" ? shortAnswer : selectedAnswer;
-    let isCorrect = false;
+    let is_correct = false;
     
     if (currentQuestion.type === "short-answer") {
       // Case-insensitive comparison
-      isCorrect = answer.toLowerCase().trim() === currentQuestion.correctAnswer.toLowerCase().trim();
+      is_correct = answer.toLowerCase().trim() === currentQuestion.correct_answer.toLowerCase().trim();
     } else {
-      isCorrect = answer === currentQuestion.correctAnswer;
+      is_correct = answer === currentQuestion.correct_answer;
     }
     
     setQuestions(prev => prev.map(q => 
       q.id === currentQuestion.id 
-        ? { ...q, userAnswer: answer, isCorrect }
+        ? { ...q, user_answer: answer, is_correct }
         : q
     ));
     
@@ -166,7 +240,7 @@ export default function TestMode() {
   const handleRestart = () => {
     if (isAITest && aiQuestions.length > 0) {
       // Reset AI-generated questions
-      const resetQuestions = aiQuestions.map(q => ({ ...q, userAnswer: undefined, isCorrect: false }));
+      const resetQuestions = aiQuestions.map(q => ({ ...q, user_answer: undefined, is_correct: false }));
       setQuestions(resetQuestions);
     } else {
       // Reset regular generated questions
@@ -259,11 +333,11 @@ export default function TestMode() {
                     key={q.id}
                     className={cn(
                       "p-4 rounded-lg border",
-                      q.isCorrect ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"
+                      q.is_correct ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      {q.isCorrect ? (
+                      {q.is_correct ? (
                         <Check className="h-5 w-5 text-success mt-0.5" />
                       ) : (
                         <X className="h-5 w-5 text-destructive mt-0.5" />
@@ -271,11 +345,11 @@ export default function TestMode() {
                       <div className="flex-1">
                         <p className="font-medium text-foreground">{q.question}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Your answer: <span className={q.isCorrect ? "text-success" : "text-destructive"}>{q.userAnswer}</span>
+                          Your answer: <span className={q.is_correct ? "text-success" : "text-destructive"}>{q.user_answer}</span>
                         </p>
-                        {!q.isCorrect && (
+                        {!q.is_correct && (
                           <p className="text-sm text-success">
-                            Correct: {q.correctAnswer}
+                            Correct: {q.correct_answer}
                           </p>
                         )}
                       </div>
@@ -312,14 +386,14 @@ export default function TestMode() {
                 Test Yourself
               </h1>
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                {(set && set.className) || (isAITest && aiClassInfo.className) ? (
+                {(set && set.class_name) || (isAITest && aiClassInfo.class_name) ? (
                   <span className="rounded-md bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-                    {set?.className || aiClassInfo.className}
+                    {set?.class_name || aiClassInfo.class_name}
                   </span>
                 ) : null}
-                {(set && set.classSubject) || (isAITest && aiClassInfo.classSubject) ? (
+                {(set && set.class_subject) || (isAITest && aiClassInfo.class_subject) ? (
                   <span className="rounded-md bg-secondary/10 px-3 py-1 text-sm font-semibold text-secondary">
-                    {set?.classSubject || aiClassInfo.classSubject}
+                    {set?.class_subject || aiClassInfo.class_subject}
                   </span>
                 ) : null}
               </div>
@@ -338,9 +412,9 @@ export default function TestMode() {
             <div className="flex justify-center items-center gap-2">
               {questions.map((question, index) => {
                 let dotColor = "bg-gray-300"; // Default: not answered
-                if (question.isCorrect === true) {
+                if (question.is_correct === true) {
                   dotColor = "bg-green-500"; // Correct
-                } else if (question.isCorrect === false) {
+                } else if (question.is_correct === false) {
                   dotColor = "bg-red-500"; // Wrong
                 } else if (skippedQuestions.has(index)) {
                   dotColor = "bg-gray-400"; // Skipped
@@ -395,16 +469,16 @@ export default function TestMode() {
                         "rounded-lg border-2 p-4 text-center transition-all font-medium relative",
                         !isAnswered && selectedAnswer === option && "border-primary bg-primary/5 text-primary",
                         !isAnswered && selectedAnswer !== option && "border-border hover:border-primary/50",
-                        isAnswered && option === currentQuestion.correctAnswer && "border-green-500 bg-green-50 text-green-800",
-                        isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "border-red-500 bg-red-50 text-red-800"
+                        isAnswered && option === currentQuestion.correct_answer && "border-green-500 bg-green-50 text-green-800",
+                        isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && "border-red-500 bg-red-50 text-red-800"
                       )}
                     >
-                      {isAnswered && option === currentQuestion.correctAnswer && (
+                      {isAnswered && option === currentQuestion.correct_answer && (
                         <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1">
                           <Check className="h-4 w-4" />
                         </div>
                       )}
-                      {isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && (
+                      {isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && (
                         <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1">
                           <X className="h-4 w-4" />
                         </div>
@@ -420,7 +494,7 @@ export default function TestMode() {
               {/* Multiple Choice Questions */}
               {currentQuestion.type === "multiple-choice" && currentQuestion.options && (
                 <div className="space-y-3">
-                  {currentQuestion.options.map((option, i) => (
+                  {currentQuestion.options.split(",").map((option, i) => (
                     <button
                       key={i}
                       onClick={() => !isAnswered && setSelectedAnswer(option)}
@@ -429,16 +503,16 @@ export default function TestMode() {
                         "w-full rounded-lg border-2 p-4 text-left transition-all relative",
                         !isAnswered && selectedAnswer === option && "border-primary bg-primary/5",
                         !isAnswered && selectedAnswer !== option && "border-border hover:border-primary/50",
-                        isAnswered && option === currentQuestion.correctAnswer && "border-green-500 bg-green-50",
-                        isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "border-red-500 bg-red-50"
+                        isAnswered && option === currentQuestion.correct_answer && "border-green-500 bg-green-50",
+                        isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && "border-red-500 bg-red-50"
                       )}
                     >
-                      {isAnswered && option === currentQuestion.correctAnswer && (
+                      {isAnswered && option === currentQuestion.correct_answer && (
                         <div className="absolute top-4 right-4 bg-green-500 text-white rounded-full p-1">
                           <Check className="h-4 w-4" />
                         </div>
                       )}
-                      {isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && (
+                      {isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && (
                         <div className="absolute top-4 right-4 bg-red-500 text-white rounded-full p-1">
                           <X className="h-4 w-4" />
                         </div>
@@ -447,15 +521,15 @@ export default function TestMode() {
                         <span className={cn(
                           "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
                           selectedAnswer === option ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-                          isAnswered && option === currentQuestion.correctAnswer && "bg-green-500 text-white",
-                          isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "bg-red-500 text-white"
+                          isAnswered && option === currentQuestion.correct_answer && "bg-green-500 text-white",
+                          isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && "bg-red-500 text-white"
                         )}>
                           {String.fromCharCode(65 + i)}
                         </span>
                         <span className={cn(
                           "font-medium flex-1",
-                          isAnswered && option === currentQuestion.correctAnswer && "text-green-800",
-                          isAnswered && currentQuestion.userAnswer === option && option !== currentQuestion.correctAnswer && "text-red-800"
+                          isAnswered && option === currentQuestion.correct_answer && "text-green-800",
+                          isAnswered && currentQuestion.user_answer === option && option !== currentQuestion.correct_answer && "text-red-800"
                         )}>{option}</span>
                       </div>
                     </button>
@@ -473,25 +547,24 @@ export default function TestMode() {
                     disabled={isAnswered}
                     className={cn(
                       "text-lg",
-                      isAnswered && currentQuestion.isCorrect && "border-success",
-                      isAnswered && !currentQuestion.isCorrect && "border-destructive"
+                      isAnswered && currentQuestion.is_correct && "border-success",
+                      isAnswered && !currentQuestion.is_correct && "border-destructive"
                     )}
                   />
                   {isAnswered && (
                   <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
                     <p className="text-sm font-medium text-blue-800 mb-1">Explanation:</p>
                     <p className="text-sm text-blue-700">
-                      {currentQuestion.explanation || 
-                       (currentQuestion.isCorrect 
-                         ? "Great job! You got this question correct." 
-                         : `The correct answer is: ${currentQuestion.correctAnswer}. Review this concept to improve your understanding.`)}
+                      {currentQuestion.is_correct 
+                        ? "Great job! You got this question correct." 
+                        : `The correct answer is: ${currentQuestion.correct_answer}. Review this concept to improve your understanding.`}
                     </p>
                   </div>
                 )}
-                {isAnswered && !currentQuestion.isCorrect && (
+                {isAnswered && !currentQuestion.is_correct && (
                   <p className="mt-2 text-sm text-success flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Correct answer: {currentQuestion.correctAnswer}
+                    Correct answer: {currentQuestion.correct_answer}
                   </p>
                 )}
                 </div>

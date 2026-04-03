@@ -51,10 +51,10 @@ export function Header() {
               <div className="flex items-center gap-2 text-sm">
                 <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
                   <span className="text-yellow-900 font-bold text-sm">
-                    {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {`${user.firstName[0]}${user.lastName[0]}`.toUpperCase()}
                   </span>
                 </div>
-                <span className="text-muted-foreground">Welcome back, {user.name}</span>
+                <span className="text-muted-foreground">Welcome back, {user.firstName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-2" />
@@ -113,7 +113,7 @@ export function Header() {
                 <>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
                     <User className="h-4 w-4" />
-                    <span>Welcome back, {user.name}</span>
+                    <span>Welcome back, {user.firstName}</span>
                   </div>
                   <Button variant="outline" className="w-full justify-start" onClick={logout}>
                     <LogOut className="h-4 w-4 mr-2" />

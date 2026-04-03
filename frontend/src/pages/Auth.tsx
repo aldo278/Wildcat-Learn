@@ -15,7 +15,8 @@ export default function Auth() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -27,8 +28,8 @@ export default function Auth() {
       return;
     }
     
-    if (isSignUp && !name) {
-      toast.error("Please enter your name");
+    if (isSignUp && (!firstName || !lastName)) {
+      toast.error("Please enter your first and last name");
       return;
     }
     
@@ -36,7 +37,7 @@ export default function Auth() {
     
     try {
       if (isSignUp) {
-        await register(email, name, password);
+        await register(email, firstName, lastName, password);
         toast.success("Account created successfully!");
       } else {
         await login(email, password);
@@ -75,19 +76,36 @@ export default function Auth() {
           
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {isSignUp && (
-              <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    className="pl-10"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    First Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
             )}

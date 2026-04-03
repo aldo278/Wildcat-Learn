@@ -55,7 +55,8 @@ export interface TestResult {
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   avatar?: string;
   created_at: string;
 }

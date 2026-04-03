@@ -6,7 +6,7 @@ import { RegisterInput, LoginInput } from '../utils/validation';
 export class AuthController {
   async register(req: Request, res: Response) {
     try {
-      const { email, name, password }: RegisterInput = req.body;
+      const { email, firstName, lastName, password }: RegisterInput = req.body;
 
       // Register user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -14,7 +14,9 @@ export class AuthController {
         password,
         options: {
           data: {
-            name
+            firstName,
+            lastName,
+            name: `${firstName} ${lastName}` // Keep for backward compatibility
           }
         }
       });
@@ -33,7 +35,8 @@ export class AuthController {
         .insert({
           id: authData.user.id,
           email,
-          name,
+          firstName,
+          lastName,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -81,7 +84,7 @@ export class AuthController {
       // Fetch user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email, name')
+        .select('id, email, firstName, lastName, created_at')
         .eq('id', data.user.id)
         .single();
 
@@ -112,7 +115,9 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name
+          firstName: user.firstName,
+          lastName: user.lastName,
+          created_at: user.created_at
         }
       });
     } catch (error) {

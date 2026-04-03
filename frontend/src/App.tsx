@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import SetDetail from "./pages/SetDetail";
+import SetEdit from "./pages/SetEdit";
 import FlashcardsMode from "./pages/FlashcardsMode";
 import LearnMode from "./pages/LearnMode";
 import TestMode from "./pages/TestMode";
@@ -50,6 +51,11 @@ const App = () => (
             <Route path="/set/:id" element={
               <ProtectedRoute>
                 <SetDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/set/:id/edit" element={
+              <ProtectedRoute>
+                <SetEdit />
               </ProtectedRoute>
             } />
             <Route path="/set/:id/flashcards" element={

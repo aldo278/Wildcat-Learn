@@ -77,6 +77,14 @@ export default function CreateSet() {
     setIsLoading(true);
     
     try {
+      console.log('Creating set with data:', {
+        title: title.trim(),
+        description: description.trim(),
+        class_name: className.trim() || undefined,
+        class_subject: classSubject.trim() || undefined,
+        is_public: isPublic
+      });
+      
       // Create the flashcard set
       const setData = await setsApi.create({
         title: title.trim(),
@@ -86,21 +94,47 @@ export default function CreateSet() {
         is_public: isPublic
       });
       
+      console.log('Set created successfully:', setData);
+      
+      console.log('Creating cards for set:', setData.set.id, 'with cards:', validCards);
+      
       // Create the flashcards
-      await cardsApi.createMultiple({
-        setId: setData.set.id,
-        cards: validCards.map(card => ({
-          term: card.term.trim(),
-          definition: card.definition.trim()
-        }))
-      });
+      try {
+        const cardsData = await cardsApi.createMultiple({
+          setId: setData.set.id,
+          cards: validCards.map(card => ({
+            term: card.term.trim(),
+            definition: card.definition.trim()
+          }))
+        });
+        console.log('Cards created successfully:', cardsData);
+      } catch (cardError) {
+        console.error('Failed to create cards, but set was created:', cardError);
+        toast.warning('Set created but cards failed to save. Please try adding cards manually.');
+        // Still navigate to the set page even if cards failed
+        navigate(`/set/${setData.set.id}`);
+        return;
+      }
       
       toast.success("Set created successfully!");
       navigate(`/set/${setData.set.id}`);
       
     } catch (error) {
       console.error('Error creating set:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create set');
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Check if it's a network error (backend not available)
+      if (error instanceof Error && 
+          (error.message.includes('Failed to fetch') || 
+           error.message.includes('NetworkError') ||
+           error.message.includes('ERR_CONNECTION_REFUSED'))) {
+        toast.error('Backend server is not available. Please ensure the backend is running on port 5555.');
+      } else {
+        toast.error(error instanceof Error ? error.message : 'Failed to create set');
+      }
     } finally {
       setIsLoading(false);
     }

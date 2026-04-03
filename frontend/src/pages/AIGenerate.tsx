@@ -180,11 +180,9 @@ export default function AIGenerate() {
       const setData = await setResponse.json();
       
       // Create the flashcards
-      const selectedFlashcards: Flashcard[] = Array.from(selectedCards).map(index => ({
-        id: `ai-${Date.now()}-${index}`,
+      const selectedFlashcards = Array.from(selectedCards).map(index => ({
         term: generatedFlashcards.flashcards[index].term,
         definition: generatedFlashcards.flashcards[index].definition,
-        createdAt: new Date(),
       }));
 
       const cardsResponse = await fetch('http://localhost:5555/api/cards/batch', {
@@ -195,10 +193,7 @@ export default function AIGenerate() {
         },
         body: JSON.stringify({
           setId: setData.set.id,
-          cards: selectedFlashcards.map(card => ({
-            term: card.term,
-            definition: card.definition
-          }))
+          cards: selectedFlashcards
         })
       });
       

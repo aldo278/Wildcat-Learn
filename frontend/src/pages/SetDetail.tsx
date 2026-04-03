@@ -149,8 +149,8 @@ export default function SetDetail() {
     // Store AI questions and class info in session storage for the test mode
     const testData = {
       questions,
-      className: set.className,
-      classSubject: set.classSubject
+      class_name: set.class_name,
+      class_subject: set.class_subject
     };
     sessionStorage.setItem('aiTestQuestions', JSON.stringify(testData));
     navigate(`/set/${set.id}/test`);
@@ -161,8 +161,8 @@ export default function SetDetail() {
     setIsEditing(true);
     setEditTitle(set.title);
     setEditDescription(set.description || '');
-    setEditClassName(set.className || '');
-    setEditClassSubject(set.classSubject || '');
+    setEditClassName(set.class_name || '');
+    setEditClassSubject(set.class_subject || '');
     setEditCards([...set.cards]);
   };
 
@@ -180,7 +180,8 @@ export default function SetDetail() {
       id: `new-${Date.now()}`,
       term: '',
       definition: '',
-      createdAt: new Date(),
+      created_at: new Date().toISOString(),
+      set_id: id || '',
     };
     setEditCards([...editCards, newCard]);
   };
@@ -267,8 +268,8 @@ export default function SetDetail() {
         ...set,
         title: editTitle.trim(),
         description: editDescription.trim(),
-        className: editClassName.trim() || null,
-        classSubject: editClassSubject.trim() || null,
+        class_name: editClassName.trim() || null,
+        class_subject: editClassSubject.trim() || null,
         cards: validCards
       });
 
@@ -297,16 +298,16 @@ export default function SetDetail() {
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             {/* Class tags */}
-            {(set.className || set.classSubject) && (
+            {(set.class_name || set.class_subject) && (
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                {set.className && (
+                {set.class_name && (
                   <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                    {set.className}
+                    {set.class_name}
                   </span>
                 )}
-                {set.classSubject && (
+                {set.class_subject && (
                   <span className="rounded-md bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">
-                    {set.classSubject}
+                    {set.class_subject}
                   </span>
                 )}
               </div>
@@ -322,9 +323,9 @@ export default function SetDetail() {
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {set.studyCount} studies
+                {set.study_count || 0} studies
               </span>
-              <span>by {set.authorName}</span>
+              <span>by {set.author_name || 'You'}</span>
             </div>
           </div>
           
@@ -335,10 +336,12 @@ export default function SetDetail() {
                   <Share2 className="h-4 w-4" />
                   Share
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={startEditing}>
-                  <Edit3 className="h-4 w-4" />
-                  Edit
-                </Button>
+                <Link to={`/set/${id}/edit`}>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit3 className="h-4 w-4" />
+                    Edit
+                  </Button>
+                </Link>
               </>
             ) : (
               <>

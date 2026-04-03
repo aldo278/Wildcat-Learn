@@ -77,7 +77,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-                  Welcome Back, {user?.name?.split(' ')[0]}! 👋
+                  Welcome Back, {user?.firstName || 'User'}! 👋
                 </h1>
                 <p className="text-lg md:text-xl text-purple-100 mb-6 max-w-2xl">
                   You have {stats.totalCards > 0 ? Math.min(14, stats.totalCards) : 0} cards due for review today. Keep your streak alive!

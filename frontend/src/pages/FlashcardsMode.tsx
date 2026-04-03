@@ -1,19 +1,60 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { FlashcardDisplay } from "@/components/flashcard/FlashcardDisplay";
 import { Button } from "@/components/ui/button";
-import { getSetById } from "@/data/mockData";
+import { setsApi } from "@/lib/api";
+import { FlashcardSet } from "@/types/flashcard";
 import { ProgressBar } from "@/components/flashcard/ProgressBar";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function FlashcardsMode() {
   const { id } = useParams<{ id: string }>();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [shuffled, setShuffled] = useState(false);
   const [cardOrder, setCardOrder] = useState<number[]>([]);
+  const [set, setSet] = useState<FlashcardSet | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const set = getSetById(id || "");
+  useEffect(() => {
+    const fetchSet = async () => {
+      if (!id) return;
+      
+      try {
+        const data = await setsApi.getById(id);
+        // Transform backend data to match frontend FlashcardSet interface
+        const transformedSet: FlashcardSet = {
+          ...data.set,
+          cards: data.cards || [],
+          author_name: data.set.author?.name || 'You',
+          card_count: data.set._count?.cards || data.cards?.length || 0,
+          class_name: data.set.class_name || null,
+          class_subject: data.set.class_subject || null,
+          study_count: 0
+        };
+        setSet(transformedSet);
+      } catch (error) {
+        console.error('Error fetching set:', error);
+        toast.error('Failed to load set');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSet();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="text-muted-foreground">Loading set...</div>
+        </div>
+      </div>
+    );
+  }
   
   if (!set) {
     return (
@@ -23,6 +64,21 @@ export default function FlashcardsMode() {
           <h1 className="font-display text-2xl font-bold">Set not found</h1>
           <Link to="/dashboard" className="mt-4 inline-block text-primary hover:underline">
             Go back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (set.cards.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="font-display text-2xl font-bold">No cards in this set</h1>
+          <p className="mt-2 text-muted-foreground">Add some flashcards to start studying!</p>
+          <Link to={`/set/${set.id}`} className="mt-4 inline-block text-primary hover:underline">
+            Go back to set details
           </Link>
         </div>
       </div>

@@ -91,12 +91,12 @@ export const setsApi = {
 }
 
 export const cardsApi = {
-  getBySet: (setId: string) => api.get(`/cards/${setId}`),
-  create: (setId: string, data: any) => api.post(`/cards/${setId}`, data),
+  getBySet: (setId: string) => api.get(`/cards/set/${setId}`),
+  create: (setId: string, data: any) => api.post(`/cards/set/${setId}`, data),
   update: (id: string, data: any) => api.put(`/cards/${id}`, data),
   delete: (id: string) => api.delete(`/cards/${id}`),
-  deleteBySet: (setId: string) => api.delete(`/cards/${setId}`),
-  createMultiple: (data: any) => api.post('/cards', data),
+  deleteBySet: (setId: string) => api.delete(`/cards/set/${setId}`),
+  createMultiple: (data: any) => api.post('/cards/batch', data),
 }
 
 export const progressApi = {

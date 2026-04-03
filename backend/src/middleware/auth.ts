@@ -5,7 +5,9 @@ export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    created_at: string;
   };
 }
 
@@ -27,22 +29,25 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     // Fetch user profile from database
     let { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, email, name')
+      .select('id, email, firstName, lastName, created_at')
       .eq('id', user.id)
       .single();
 
     // If profile doesn't exist, create it
     if (profileError && profileError.code === 'PGRST116') {
+      const displayName = user.user_metadata?.name || user.user_metadata?.firstName || user.email?.split('@')[0] || 'User';
+      const nameParts = displayName.split(' ');
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           email: user.email || '',
-          name: user.user_metadata?.name || 'User',
+          firstName: user.user_metadata?.firstName || nameParts[0] || 'User',
+          lastName: user.user_metadata?.lastName || nameParts.slice(1).join(' ') || '',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .select('id, email, name')
+        .select('id, email, firstName, lastName, created_at')
         .single();
 
       if (createError) {

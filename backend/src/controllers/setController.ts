@@ -10,7 +10,7 @@ export class SetController {
         .from('flashcard_sets')
         .select(`
           *,
-          author:profiles!flashcard_sets_author_id_fkey(id, name),
+          author:profiles!flashcard_sets_author_id_fkey(id, firstName, lastName),
           cards:flashcards(count)
         `)
         .eq('is_public', true)
@@ -36,7 +36,7 @@ export class SetController {
         .from('flashcard_sets')
         .select(`
           *,
-          author:profiles!flashcard_sets_author_id_fkey(id, name),
+          author:profiles!flashcard_sets_author_id_fkey(id, firstName, lastName),
           cards:flashcards(*)
         `)
         .eq('id', id)
@@ -104,7 +104,7 @@ export class SetController {
         })
         .select(`
           *,
-          author:profiles!flashcard_sets_author_id_fkey(id, name)
+          author:profiles!flashcard_sets_author_id_fkey(id, firstName, lastName)
         `)
         .single();
 
@@ -160,7 +160,7 @@ export class SetController {
         .eq('id', id)
         .select(`
           *,
-          author:profiles!flashcard_sets_author_id_fkey(id, name)
+          author:profiles!flashcard_sets_author_id_fkey(id, firstName, lastName)
         `)
         .single();
 
